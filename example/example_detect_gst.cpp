@@ -5,7 +5,7 @@
 
 int main() {
     // カメラパラメータを設定
-    cam_info_t cam_info = {480, 480, 960, 540}; // 例: fx, fy, cx, cy
+    cam_info_t cam_info = {826.1, 826.1, 640, 360}; // fx, fy, cx, cy: go2 HD cam
     double tagSize = 0.162; // 実際のAprilTagのサイズ (メートル単位)
 
     // AprilTag検出器を初期化
