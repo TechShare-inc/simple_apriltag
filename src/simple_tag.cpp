@@ -85,3 +85,14 @@ apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame
 
   return data;
 }
+
+Pose2D DetectApriltag::convertTo2DPose(const apriltag_pose_t& pose) {
+    Pose2D pose2D;
+    pose2D.x = matd_get(pose.t, 0, 0);
+    pose2D.y = matd_get(pose.t, 1, 0);
+    pose2D.z = matd_get(pose.t, 2, 0);
+    float ang_x = std::atan2(matd_get(pose.R, 2, 0), matd_get(pose.R, 0, 0));
+    float ang_z = std::atan2(-matd_get(pose.R, 1, 2), matd_get(pose.R, 1, 1));
+    pose2D.rotation = (ang_x + ang_z) / 2;
+    return pose2D;
+}

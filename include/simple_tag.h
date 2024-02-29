@@ -26,6 +26,13 @@ typedef struct{
   double CAM_CY; // [px]: half of camera height
 }cam_info_t;
 
+typedef struct {
+    double x; // x座標
+    double y; // y座標
+    double z; // z座標（高さ）
+    float rotation; // y軸周りの回転角度（ラジアン）
+} Pose2D;
+
 class TagCalculate{
 private:
   const double TAG_SIZE; // [m]
@@ -49,6 +56,7 @@ public:
   DetectApriltag(const DetectApriltag&) = delete;
   DetectApriltag& operator=(const DetectApriltag&) = delete;
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
+  Pose2D convertTo2DPose(const apriltag_pose_t& pose);
 };
 
 #endif  // SIMPLE_TAG_H
