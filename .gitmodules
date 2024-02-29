@@ -1,0 +1,4 @@
+[submodule "simple_apriltag"]
+	path = simple_apriltag
+	url = https://github.com/TechShare-inc/simple_apriltag.git
+	branch = simple_sdk
