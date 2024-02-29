@@ -27,7 +27,7 @@ private:
     {
         cv::Mat frame;
         if (!cap.read(frame)) {
-            response->result = 1; // カメラからのキャプチャ失敗
+            response->result = 99; // カメラからのキャプチャ失敗
             return;
         }
 
@@ -37,7 +37,7 @@ private:
             response->result = 0; // 成功
             response->apriltag_id = tag.apriltag_id;
         } else {
-            response->result = 2; // 検出失敗
+            response->result = 1; // 検出失敗
             response->apriltag_id = -1;
         }
     }

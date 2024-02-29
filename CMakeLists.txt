@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV REQUIRED) # find OpenCV
 find_package(rosidl_default_generators REQUIRED)
-find_package(apriltag_service REQUIRED) 
+find_package(apriltag REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DetectApriltag.srv"
@@ -19,27 +19,20 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 # include directories
 include_directories(
-  include
   simple_apriltag/include
   ${rclcpp_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
-# apriltagのinclude指定
-include_directories(/usr/local/include/apriltag)
-include_directories(/usr/local/include)
-link_directories(/usr/local/lib)
-
 # declare a C++ executable
 add_executable(service_server src/service_server.cpp simple_apriltag/src/simple_tag.cpp)
-ament_target_dependencies(service_server rclcpp OpenCV apriltag_service)
-target_link_libraries(service_server ${rclcpp_LIBRARIES} ${OpenCV_LIBS} opencv_highgui apriltag)
+ament_target_dependencies(service_server rclcpp OpenCV)
 
-# install the launch directory
-#install(DIRECTORY
-#  launch
-#  DESTINATION share/${PROJECT_NAME}/
-#)
+# 新しい行: サービスサーバーが生成されたメッセージヘッダーに依存することを指定
+rosidl_target_interfaces(service_server
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+target_link_libraries(service_server ${rclcpp_LIBRARIES} ${OpenCV_LIBS} opencv_highgui apriltag)
 
 # Install C++ executables
 install(TARGETS
