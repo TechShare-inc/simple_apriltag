@@ -1,44 +1,42 @@
 #include "rclcpp/rclcpp.hpp"
 #include "apriltag_service/srv/detect_apriltag.hpp"
 
-using DetectApriltag = apriltag_service::srv::DetectApriltag;
-rclcpp::Node::SharedPtr g_node = nullptr;
+using namespace std::chrono_literals; // この行を追加して、'1s' のような時間リテラルを使えるようにします。
 
-void apriltag_service_response_callback(
-    rclcpp::Client<DetectApriltag>::SharedFuture future)
-{
-    auto response = future.get();
-    if (response->result == 0) {
-        RCLCPP_INFO(g_node->get_logger(), "AprilTag detected: ID %d at [x: %f, y: %f, z: %f, rotation: %f]",
-                    response->apriltag_id, response->x, response->y, response->z, response->rotation);
-    } else if (response->result == 99) {
-        RCLCPP_ERROR(g_node->get_logger(), "Camera capture failed.");
-    } else {
-        RCLCPP_WARN(g_node->get_logger(), "AprilTag detection failed.");
-    }
-}
-
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    g_node = rclcpp::Node::make_shared("apriltag_client");
-    auto client = g_node->create_client<DetectApriltag>("detect_apriltag");
+    auto node = rclcpp::Node::make_shared("apriltag_client_simple");
+    auto client = node->create_client<apriltag_service::srv::DetectApriltag>("detect_apriltag");
 
-    while (!client->wait_for_service(std::chrono::seconds(1))) {
+    while (!client->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
-            RCLCPP_ERROR(g_node->get_logger(), "Interrupted while waiting for the service. Exiting.");
+            RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
             return 0;
         }
-        RCLCPP_INFO(g_node->get_logger(), "Waiting for service to appear...");
+        RCLCPP_INFO(node->get_logger(), "Waiting for service to appear...");
     }
 
-    auto request = std::make_shared<DetectApriltag::Request>();
-    // ここでリクエストパラメータを設定できます。今回のケースでは、リクエストの内容は特に指定されていません。
+    auto request = std::make_shared<apriltag_service::srv::DetectApriltag::Request>();
+    // リクエストパラメータは、必要に応じてここで設定します。
 
-    auto future_result = client->async_send_request(request, apriltag_service_response_callback);
-    
-    // クライアントがサービスレスポンスを待機
-    rclcpp::spin(g_node);
+    auto future_result = client->async_send_request(request);
+
+    // レスポンスを待機
+    if (rclcpp::spin_until_future_complete(node, future_result) ==
+        rclcpp::FutureReturnCode::SUCCESS) {
+        auto response = future_result.get();
+        if (response->result == 0) {
+            RCLCPP_INFO(node->get_logger(), "AprilTag detected: ID %ld at [x: %f, y: %f, z: %f, rotation: %f]",
+                        response->apriltag_id, response->x, response->y, response->z, response->rotation);
+        } else if (response->result == 99) {
+            RCLCPP_ERROR(node->get_logger(), "Camera capture failed.");
+        } else {
+            RCLCPP_WARN(node->get_logger(), "AprilTag detection failed.");
+        }
+    } else {
+        RCLCPP_ERROR(node->get_logger(), "Service call failed.");
+    }
+
     rclcpp::shutdown();
     return 0;
 }
