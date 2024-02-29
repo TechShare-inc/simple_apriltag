@@ -35,7 +35,10 @@ int main() {
         // 検出結果を画面に表示
         if (tag.marker_flag) {
             std::cout << "detected AprilTag ID: " << tag.apriltag_id << std::endl;
-            // ここで tag.pose を使用して、さらなる処理を行うことができます
+            // ここで2Dポーズ情報を取得して表示
+            Pose2D pose2D = detector.convertTo2DPose(tag.pose);
+            std::cout << "2D Pose: x=" << pose2D.x << ", y=" << pose2D.y << ", z=" << pose2D.z
+                      << ", rotation=" << pose2D.rotation << " rad" << std::endl;
         }
 
         // 結果を表示

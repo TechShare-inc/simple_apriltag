@@ -27,9 +27,9 @@ typedef struct{
 }cam_info_t;
 
 typedef struct {
-    double x; // x座標
-    double y; // y座標
-    double z; // z座標（高さ）
+    double x; // x座標：右方向
+    double y; // y座標：下方向
+    double z; // z座標：正面方向
     float rotation; // y軸周りの回転角度（ラジアン）
 } Pose2D;
 
