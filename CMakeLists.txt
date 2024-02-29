@@ -27,16 +27,19 @@ include_directories(
 # declare a C++ executable
 add_executable(service_server src/service_server.cpp simple_apriltag/src/simple_tag.cpp)
 ament_target_dependencies(service_server rclcpp OpenCV)
+rosidl_target_interfaces(service_server ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
+target_link_libraries(service_server ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
 
-# 新しい行: サービスサーバーが生成されたメッセージヘッダーに依存することを指定
-rosidl_target_interfaces(service_server
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
-
-target_link_libraries(service_server ${rclcpp_LIBRARIES} ${OpenCV_LIBS} opencv_highgui apriltag)
+# declare a C++ executable
+add_executable(service_client src/service_client.cpp simple_apriltag/src/simple_tag.cpp)
+ament_target_dependencies(service_client rclcpp OpenCV)
+rosidl_target_interfaces(service_client ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
+target_link_libraries(service_client ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
 
 # Install C++ executables
 install(TARGETS
   service_server
+  service_client
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,5 +1,8 @@
-# DetectAprilTag.srv
-# リクエストパートは空でOK（特に画像データはサービスコールではなくトピック経由で受け取ることを想定）
+# リクエストパートは空
 ---
 uint8 result       # 処理結果（0: 成功, 1: 検出失敗, 99: カメラエラー）
 int64 apriltag_id  # 検出されたAprilTagのID（検出されなかった場合は-1）
+float64 x           # x座標：右方向
+float64 y           # y座標：下方向
+float64 z           # z座標：正面方向
+float64 rotation     # y軸周りの回転角度（ラジアン）

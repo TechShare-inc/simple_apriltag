@@ -26,8 +26,14 @@ private:
         std::shared_ptr<apriltag_service::srv::DetectApriltag::Response> response)
     {
         cv::Mat frame;
+
         if (!cap.read(frame)) {
             response->result = 99; // カメラからのキャプチャ失敗
+            response->apriltag_id = -1;
+            response->x = 0;
+            response->y = 0;
+            response->z = 0;
+            response->rotation = 0;
             return;
         }
 
@@ -36,9 +42,18 @@ private:
         if (tag.marker_flag) {
             response->result = 0; // 成功
             response->apriltag_id = tag.apriltag_id;
+            Pose2D pose2D = detector.convertTo2DPose(tag.pose);
+            response->x = pose2D.x;
+            response->y = pose2D.y;
+            response->z = pose2D.z;
+            response->rotation = pose2D.rotation;
         } else {
             response->result = 1; // 検出失敗
             response->apriltag_id = -1;
+            response->x = 0;
+            response->y = 0;
+            response->z = 0;
+            response->rotation = 0;
         }
     }
 
