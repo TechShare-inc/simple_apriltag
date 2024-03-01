@@ -37,10 +37,10 @@ rosidl_target_interfaces(service_server_gst ${PROJECT_NAME} "rosidl_typesupport_
 target_link_libraries(service_server_gst ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
 
 # declare a C++ executable
-add_executable(service_client src/service_client.cpp simple_apriltag/src/simple_tag.cpp)
+add_executable(service_client src/service_client.cpp)
 ament_target_dependencies(service_client rclcpp OpenCV)
 rosidl_target_interfaces(service_client ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
-target_link_libraries(service_client ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
+target_link_libraries(service_client ${rclcpp_LIBRARIES} ${OpenCV_LIBS})
 
 # Install C++ executables
 install(TARGETS

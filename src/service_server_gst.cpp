@@ -13,7 +13,7 @@ public:
     AprilTagService()
     : Node("apriltag_service"),
       cap("udpsrc address=230.1.1.1 port=1720 multicast-iface=eth0 ! application/x-rtp,media=video,encoding-name=H264 ! rtph264depay ! h264parse ! queue ! avdec_h264 ! videoconvert ! appsink sync=false"),
-      detector(0.162, {826.1, 826.1, 640, 360}), // 必要な引数を渡して初期化
+      detector({826.1, 826.1, 640, 360}), // 必要な引数を渡して初期化
       running(true) // スレッド実行状態をtrueに設定
     {
         if (!cap.isOpened()) {
@@ -62,14 +62,16 @@ private:
             std::lock_guard<std::mutex> lock(frame_mutex);
             auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_frame_time).count();
 
-            if (frame.empty() || time_elapsed > 1) { // フレームが空、または最後のフレームが1秒以上前の場合
+            if (frame.empty() || time_elapsed > 1) {
                 response->result = 99; // フレームが古すぎる
                 return;
             }
-            frame.copyTo(frame_copy); // フレームのコピーを作成
+            frame.copyTo(frame_copy);
         }
 
-        // ここでAprilTag検出ロジックを実装...
+        // リクエストからtag_sizeを取得して設定
+        detector.setTagSize(request->tag_size);
+        // AprilTag検出ロジック...
         apriltag_t tag = detector.detect_apriltag(frame, frame);
         if (tag.marker_flag) {
             response->result = 0; // 成功

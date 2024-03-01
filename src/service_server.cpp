@@ -9,7 +9,7 @@ public:
     AprilTagService()
     : Node("apriltag_service"), 
       cap(0), // 0はデフォルトのカメラを指す
-      detector(0.162, {826.1, 826.1, 640, 360}) // 必要な引数を渡して初期化
+      detector({826.1, 826.1, 640, 360}) // 必要な引数を渡して初期化
     {
         if (!cap.isOpened()) {
             RCLCPP_ERROR(this->get_logger(), "Cannot open camera");
@@ -36,6 +36,9 @@ private:
             response->rotation = 0;
             return;
         }
+
+        // リクエストからtag_sizeを取得して設定
+        detector.setTagSize(request->tag_size);
 
         // ここでAprilTag検出ロジックを実装...
         apriltag_t tag = detector.detect_apriltag(frame, frame);
