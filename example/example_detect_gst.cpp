@@ -6,10 +6,9 @@
 int main() {
     // カメラパラメータを設定
     cam_info_t cam_info = {826.1, 826.1, 640, 360}; // fx, fy, cx, cy: go2 HD cam
-    double tagSize = 0.162; // 実際のAprilTagのサイズ (メートル単位)
 
     // AprilTag検出器を初期化
-    DetectApriltag detector(tagSize, cam_info);
+    DetectApriltag detector(cam_info);
 
     // GStreamerのパイプラインを定義
     std::string address = "230.1.1.1"; // マルチキャストアドレス
@@ -28,6 +27,9 @@ int main() {
         // カメラからフレームをキャプチャ
         cap >> frame;
         if (frame.empty()) break;
+
+         // TAG SIZE
+        detector.setTagSize(0.15); // [m]
 
         // AprilTagを検出し、結果を取得
         apriltag_t tag = detector.detect_apriltag(frame, frame);

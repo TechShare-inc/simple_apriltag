@@ -35,11 +35,12 @@ typedef struct {
 
 class TagCalculate{
 private:
-  const double TAG_SIZE; // [m]
   const cam_info_t cam_info;
 public:
-  TagCalculate(double tagSize, const cam_info_t& cameraInfo);
+  double TAG_SIZE = 0.1; // [m]
+  TagCalculate(const cam_info_t& cameraInfo);
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det);
+  Pose2D convertTo2DPose(const apriltag_pose_t& pose);
 };
 
 class DetectApriltag{
@@ -49,12 +50,13 @@ private:
   apriltag_family_t *tf = NULL;
   zarray_t *detections;
   bool detect_tag(cv::Mat& frame);
-  void draw(cv::Mat& frame, cv::Point upper_right, cv::Point lower_left);
+  void draw(cv::Mat& frame, cv::Point top_right, cv::Point top_left, cv::Point bottom_left, cv::Point bottom_right);
 public:
-  DetectApriltag(double tagSize, const cam_info_t& cameraInfo);
+  DetectApriltag(const cam_info_t& cameraInfo);
   ~DetectApriltag();
   DetectApriltag(const DetectApriltag&) = delete;
   DetectApriltag& operator=(const DetectApriltag&) = delete;
+  void setTagSize(const double& TAG_SIZE);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
 };
