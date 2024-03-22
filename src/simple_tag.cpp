@@ -63,7 +63,7 @@ bool DetectApriltag::detect_tag(cv::Mat& frame){
     detections = apriltag_detector_detect(td, &im);
 
     if(zarray_size(detections) == 0){ //マーカー検出がなかった場合
-      printf("no marker! \n");
+      // printf("no marker! \n");
       return false;
     }
 
