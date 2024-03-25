@@ -42,6 +42,10 @@ DetectApriltag::~DetectApriltag() {
     tag36h11_destroy(tf);
 }
 
+void DetectApriltag::setCamInfo(const cam_info_t& cam_info){
+  tag_calculate.cam_info = cam_info;
+}
+
 void DetectApriltag::setTagSize(const double& TAG_SIZE){
   tag_calculate.TAG_SIZE = TAG_SIZE;
 }

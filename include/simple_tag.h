@@ -34,9 +34,8 @@ typedef struct {
 } Pose2D;
 
 class TagCalculate{
-private:
-  const cam_info_t cam_info;
 public:
+  cam_info_t cam_info;
   double TAG_SIZE = 0.1; // [m]
   TagCalculate(const cam_info_t& cameraInfo);
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det);
@@ -56,6 +55,7 @@ public:
   ~DetectApriltag();
   DetectApriltag(const DetectApriltag&) = delete;
   DetectApriltag& operator=(const DetectApriltag&) = delete;
+  void setCamInfo(const cam_info_t& cam_info);
   void setTagSize(const double& TAG_SIZE);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
