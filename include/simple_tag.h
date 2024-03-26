@@ -37,6 +37,7 @@ class TagCalculate{
 public:
   cam_info_t cam_info;
   double TAG_SIZE = 0.1; // [m]
+  TagCalculate(){}
   TagCalculate(const cam_info_t& cameraInfo);
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
