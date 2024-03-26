@@ -31,6 +31,12 @@ Pose2D TagCalculate::convertTo2DPose(const apriltag_pose_t& pose) {
     return pose2D;
 }
 
+DetectApriltag::DetectApriltag()
+ : tf(tag36h11_create())
+{
+    apriltag_detector_add_family(td, tf);
+}
+
 DetectApriltag::DetectApriltag(const cam_info_t& cameraInfo)
  : tag_calculate(cameraInfo), tf(tag36h11_create())
 {
