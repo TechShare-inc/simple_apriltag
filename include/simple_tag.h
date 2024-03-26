@@ -52,7 +52,7 @@ private:
   bool detect_tag(cv::Mat& frame);
   void draw(cv::Mat& frame, cv::Point top_right, cv::Point top_left, cv::Point bottom_left, cv::Point bottom_right);
 public:
-  DetectApriltag(){}
+  DetectApriltag();
   DetectApriltag(const cam_info_t& cameraInfo);
   ~DetectApriltag();
   DetectApriltag(const DetectApriltag&) = delete;
