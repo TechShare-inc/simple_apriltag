@@ -3,7 +3,14 @@
 #include <string>
 #include "simple_tag.h"
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <network-interface> (e.g., eth0, wlan0)" << std::endl;
+        return -1;
+    }
+
+    std::string network_interface = argv[1]; // コマンドラインからのネットワークインターフェース
+
     // カメラパラメータを設定
     cam_info_t cam_info = {826.1, 826.1, 640, 360}; // fx, fy, cx, cy: go2 HD cam
 
@@ -13,7 +20,8 @@ int main() {
     // GStreamerのパイプラインを定義
     std::string address = "230.1.1.1"; // マルチキャストアドレス
     std::string port = "1720"; // UDPポート
-    std::string gst_cmd = "udpsrc address=" + address + " port=" + port + " multicast-iface=eth0 ! application/x-rtp,media=video,encoding-name=H264 ! rtph264depay ! h264parse ! queue ! avdec_h264 ! videoconvert ! appsink sync=false";
+    std::string gst_cmd = "udpsrc address=" + address + " port=" + port + " multicast-iface=" + network_interface + 
+                          " ! application/x-rtp,media=video,encoding-name=H264 ! rtph264depay ! h264parse ! queue ! avdec_h264 ! videoconvert ! appsink sync=false";
 
     // GStreamerパイプラインでVideoCaptureオブジェクトを開く
     cv::VideoCapture cap(gst_cmd);
@@ -28,7 +36,7 @@ int main() {
         cap >> frame;
         if (frame.empty()) break;
 
-         // TAG SIZE
+        // TAG SIZE
         detector.setTagSize(0.15); // [m]
 
         // AprilTagを検出し、結果を取得
@@ -41,6 +49,10 @@ int main() {
             Pose2D pose2D = detector.convertTo2DPose(tag.pose);
             std::cout << "2D Pose: x=" << pose2D.x << ", y=" << pose2D.y << ", z=" << pose2D.z
                       << ", rotation=" << pose2D.rotation << " rad" << std::endl;
+            // ここで3Dポーズ情報を取得して表示
+            Pose3D pose3D = detector.convertTo3DPose(tag.pose);
+            std::cout << "3D Pose: x=" << pose3D.x << ", y=" << pose3D.y << ", z=" << pose3D.z
+                      << ", roll=" << pose3D.roll << ", pitch=" << pose3D.pitch << ", yaw=" << pose3D.yaw << std::endl;
         }
 
         // 結果を表示

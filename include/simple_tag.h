@@ -33,6 +33,15 @@ typedef struct {
     float rotation; // y軸周りの回転角度（ラジアン）
 } Pose2D;
 
+typedef struct {
+    double x; // X座標：右方向
+    double y; // Y座標：下方向
+    double z; // Z座標：前方向
+    double roll;  // X軸周りの回転
+    double pitch; // Y軸周りの回転
+    double yaw;   // Z軸周りの回転
+} Pose3D;
+
 class TagCalculate{
 public:
   cam_info_t cam_info;
@@ -41,6 +50,7 @@ public:
   TagCalculate(const cam_info_t& cameraInfo);
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
+  Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };
 
 class DetectApriltag{
@@ -61,6 +71,7 @@ public:
   void setTagSize(const double& TAG_SIZE);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
+  Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };
 
 #endif  // SIMPLE_TAG_H

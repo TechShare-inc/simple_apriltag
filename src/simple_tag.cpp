@@ -31,6 +31,17 @@ Pose2D TagCalculate::convertTo2DPose(const apriltag_pose_t& pose) {
     return pose2D;
 }
 
+Pose3D TagCalculate::convertTo3DPose(const apriltag_pose_t& pose) {
+    Pose3D pose3D;
+    pose3D.x = matd_get(pose.t, 0, 0);
+    pose3D.y = matd_get(pose.t, 1, 0);
+    pose3D.z = matd_get(pose.t, 2, 0);
+    pose3D.roll = - atan2(matd_get(pose.R, 1, 0), matd_get(pose.R, 0, 0)); // tagのz軸周り
+    pose3D.pitch = - atan2(matd_get(pose.R, 2, 1), matd_get(pose.R, 2, 2)); // tagのx軸周り
+    pose3D.yaw = - atan2(-matd_get(pose.R, 2, 0), sqrt(pow(matd_get(pose.R, 2, 1), 2) + pow(matd_get(pose.R, 2, 2), 2))); // tagのy軸周り
+    return pose3D;
+}
+
 DetectApriltag::DetectApriltag()
  : tf(tag36h11_create())
 {
@@ -123,4 +134,8 @@ apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame
 
 Pose2D DetectApriltag::convertTo2DPose(const apriltag_pose_t& pose) {
     return tag_calculate.convertTo2DPose(pose);
+}
+
+Pose3D DetectApriltag::convertTo3DPose(const apriltag_pose_t& pose) {
+    return tag_calculate.convertTo3DPose(pose);
 }

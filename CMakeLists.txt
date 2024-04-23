@@ -15,11 +15,12 @@ else()
     message(FATAL_ERROR "OpenCV Library Not Found")
 endif()
 
+find_package(apriltag REQUIRED)
 
 include_directories(
   include
   ${PROJECT_SOURCE_DIR}/include
-  /usr/local/include/apriltag
+  #/usr/local/include/apriltag
 )
 
 add_executable(example_detect example/example_detect.cpp src/simple_tag.cpp)
