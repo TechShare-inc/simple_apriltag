@@ -30,17 +30,35 @@ ament_target_dependencies(service_server rclcpp OpenCV)
 rosidl_target_interfaces(service_server ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
 target_link_libraries(service_server ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
 
+# Set the LD_LIBRARY_PATH for service_server
+set_target_properties(service_server PROPERTIES
+    BUILD_RPATH /usr/local/lib
+    INSTALL_RPATH /usr/local/lib
+)
+
 # declare a C++ executable
 add_executable(service_server_gst src/service_server_gst.cpp simple_apriltag/src/simple_tag.cpp)
 ament_target_dependencies(service_server_gst rclcpp OpenCV)
 rosidl_target_interfaces(service_server_gst ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
 target_link_libraries(service_server_gst ${rclcpp_LIBRARIES} ${OpenCV_LIBS} apriltag)
 
+# Set the LD_LIBRARY_PATH for service_server_gst
+set_target_properties(service_server_gst PROPERTIES
+    BUILD_RPATH /usr/local/lib
+    INSTALL_RPATH /usr/local/lib
+)
+
 # declare a C++ executable
 add_executable(service_client src/service_client.cpp)
 ament_target_dependencies(service_client rclcpp OpenCV)
 rosidl_target_interfaces(service_client ${PROJECT_NAME} "rosidl_typesupport_cpp") # 生成されたメッセージヘッダーに依存することを指定
 target_link_libraries(service_client ${rclcpp_LIBRARIES} ${OpenCV_LIBS})
+
+# Set the LD_LIBRARY_PATH for service_client
+set_target_properties(service_client PROPERTIES
+    BUILD_RPATH /usr/local/lib
+    INSTALL_RPATH /usr/local/lib
+)
 
 # Install C++ executables
 install(TARGETS
