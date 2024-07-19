@@ -70,6 +70,7 @@ public:
   void setCamInfo(const cam_info_t& cam_info);
   void setTagSize(const double& TAG_SIZE);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
+  apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame, int tag_id);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };

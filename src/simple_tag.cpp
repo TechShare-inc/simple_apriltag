@@ -112,12 +112,53 @@ apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame
     return data;
   }
 
-  //マーカー検出があったの場合: calculate tag-pose
-  data.marker_flag = 1;
-  data.apriltag_id = 0;
-
+  // マーカー検出があったの場合: calculate tag-pose
   apriltag_detection_t *det;
   zarray_get(detections, 0, &det);
+  tag_calculate.tag_calculate(data, det);
+
+  // draw
+  draw(output_frame,
+   cv::Point(det->p[2][0], det->p[2][1]), // top right
+   cv::Point(det->p[3][0], det->p[3][1]), // top left
+   cv::Point(det->p[0][0], det->p[0][1]), // bottom left
+   cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+
+  apriltag_detections_destroy(detections);
+
+  return data;
+}
+
+apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame, int tag_id){
+  apriltag_t data;
+  
+  if(!detect_tag(frame)){
+    // マーカー検出がない場合
+    data.marker_flag = 0;
+    apriltag_detections_destroy(detections);
+    return data;
+  }
+
+  // マーカーを検出した場合、tag_idを選ぶ
+  apriltag_detection_t *det;
+  bool tag_found = false;
+  for(int i = 0; i < zarray_size(detections); i++) {
+      zarray_get(detections, i, &det);
+      // printf("i: %d, id: %d, p: %f\n", i, det->id, CAM_CX - det->p[0][0]);
+      if(det->id == tag_id) {
+          // printf("tag_id %d was found.\n", tag_id);
+          tag_found = true;
+          break; // 見つけた段階でfor文を抜けるので、detには期待するものが格納されている
+      }
+  }
+
+  // tag_foundの結果を出力
+  if(!tag_found) {
+    // printf("tag_id %d was not found.\n", tag_id);
+    return data;
+  }
+
+  // 特定のマーカーがあったの場合: calculate tag-pose
   tag_calculate.tag_calculate(data, det);
 
   // draw
