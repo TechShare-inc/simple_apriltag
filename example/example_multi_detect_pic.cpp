@@ -10,10 +10,10 @@ int main(int argc, char** argv) {
     std::string image_path = argv[1];
 
     cam_info_t cam_info = {826.1, 826.1, 640, 360};
+    double THRESHOLD_PERCENTAGE = 10.0;
 
     MultiMarkerPoseEstimator pose_estimator;
     pose_estimator.detector.setCamInfo(cam_info);
-    pose_estimator.detector.setTagSize(0.15);
 
     cv::Mat frame = cv::imread(image_path);
     if (frame.empty()) {
@@ -21,9 +21,14 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    auto marker_pair_opt = pose_estimator.detectAndEstimatePair(frame, frame);
+    cv::Mat output_frame;
+    frame.copyTo(output_frame); // Ensure output_frame is initialized properly
+
+    tag_pair_t pair_config = {301, 302, 0.15, 0.0, 0.15, 0.2};  // タグID 301と302のペアの設定、タグサイズを追加
+
+    auto marker_pair_opt = pose_estimator.detectAndEstimatePair(frame, output_frame, pair_config);
     if (marker_pair_opt) {
-        const MarkerPair& marker_pair = marker_pair_opt.value();
+        const marker_pair_t& marker_pair = marker_pair_opt.value();
         std::cout << "Detected Marker 1 ID: " << marker_pair.marker1.apriltag_id << std::endl;
         Pose3D pose1 = pose_estimator.detector.convertTo3DPose(marker_pair.marker1.pose);
         std::cout << "Marker 1 Pose: x=" << pose1.x
@@ -48,12 +53,23 @@ int main(int argc, char** argv) {
                   << ", roll=" << marker_pair.average_pose.roll
                   << ", pitch=" << marker_pair.average_pose.pitch
                   << ", yaw=" << marker_pair.average_pose.yaw << std::endl;
+
+        bool is_valid = pose_estimator.validateRelativePose(pose1, pose2, pair_config, THRESHOLD_PERCENTAGE);
+        if (is_valid) {
+            std::cout << "The relative pose is valid." << std::endl;
+        } else {
+            std::cerr << "The relative pose is not valid." << std::endl;
+        }
     } else {
         std::cerr << "Could not detect a pair of markers." << std::endl;
     }
 
-    cv::imshow("Detected Markers", frame);
-    cv::waitKey(0);
+    if (!output_frame.empty()) {
+        cv::imshow("Detected Markers", output_frame);
+        cv::waitKey(0);
+    } else {
+        std::cerr << "Output frame is empty, cannot display." << std::endl;
+    }
 
     return 0;
 }

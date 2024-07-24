@@ -1,24 +1,33 @@
 #include "multi_marker_pose_estimator.h"
+#include "pose_utils.h"
 #include <iostream>
 #include <cmath>
 
-std::optional<MarkerPair> MultiMarkerPoseEstimator::detectAndEstimatePair(cv::Mat& frame, cv::Mat& output_frame) {
+std::optional<marker_pair_t> MultiMarkerPoseEstimator::detectAndEstimatePair(cv::Mat& frame, cv::Mat& output_frame, const tag_pair_t& pair_config) {
     std::vector<apriltag_t> tags = detector.detect_multiple_apriltags(frame, output_frame);
 
-    if (tags.size() < 2) {
-        std::cerr << "Less than 2 tags detected." << std::endl;
+    apriltag_t* tag1 = nullptr;
+    apriltag_t* tag2 = nullptr;
+
+    for (auto& tag : tags) {
+        if (tag.apriltag_id == pair_config.tag1_id) {
+            tag1 = &tag;
+        } else if (tag.apriltag_id == pair_config.tag2_id) {
+            tag2 = &tag;
+        }
+    }
+
+    if (!tag1 || !tag2) {
+        std::cerr << "Could not find both tags." << std::endl;
         return std::nullopt;
     }
 
-    apriltag_t tag1 = tags[0];
-    apriltag_t tag2 = tags[1];
-
-    Pose3D pose1 = detector.convertTo3DPose(tag1.pose);
-    Pose3D pose2 = detector.convertTo3DPose(tag2.pose);
+    Pose3D pose1 = detector.convertTo3DPose(tag1->pose);
+    Pose3D pose2 = detector.convertTo3DPose(tag2->pose);
 
     Pose3D average_pose = calculateAveragePose(pose1, pose2);
 
-    MarkerPair pair = { tag1, tag2, average_pose };
+    marker_pair_t pair = { *tag1, *tag2, average_pose };
     return pair;
 }
 
@@ -34,4 +43,20 @@ Pose3D MultiMarkerPoseEstimator::calculateAveragePose(const Pose3D& pose1, const
     average_pose.yaw = (pose1.yaw + pose2.yaw) / 2.0;
 
     return average_pose;
+}
+
+bool MultiMarkerPoseEstimator::validateRelativePose(const Pose3D& pose1, const Pose3D& pose2, const tag_pair_t& pair_config, double threshold_percentage) {
+    tf2::Transform transform1 = createTransform(pose1.x, pose1.y, pose1.z, pose1.roll, pose1.pitch, pose1.yaw);
+    tf2::Transform transform2 = createTransform(pose2.x, pose2.y, pose2.z, pose2.roll, pose2.pitch, pose2.yaw);
+
+    tf2::Transform relative_transform = transform1.inverse() * transform2;
+
+    double max_tag_size = std::max(pair_config.tag1_size, pair_config.tag2_size);
+
+    double y_error_percentage = std::abs(relative_transform.getOrigin().y() - pair_config.tag2_y_from_tag1) / max_tag_size * 100.0;
+    double z_error_percentage = std::abs(relative_transform.getOrigin().z() - pair_config.tag2_z_from_tag1) / max_tag_size * 100.0;
+
+    std::cout << "Relative Pose Error: Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
+
+    return (y_error_percentage <= threshold_percentage && z_error_percentage <= threshold_percentage);
 }
