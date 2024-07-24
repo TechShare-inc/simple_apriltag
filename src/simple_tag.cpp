@@ -173,6 +173,36 @@ apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame
   return data;
 }
 
+std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame){
+  std::vector<apriltag_t> tags_data;
+  
+  if(!detect_tag(frame)){
+    // マーカー検出がない場合
+    apriltag_detections_destroy(detections);
+    return tags_data;
+  }
+
+  // マーカー検出があった場合: calculate tag-pose
+  apriltag_detection_t *det;
+  for(int i = 0; i < zarray_size(detections); i++) {
+    zarray_get(detections, i, &det);
+    apriltag_t data;
+    tag_calculate.tag_calculate(data, det);
+    tags_data.push_back(data);
+
+    // draw
+    draw(output_frame,
+     cv::Point(det->p[2][0], det->p[2][1]), // top right
+     cv::Point(det->p[3][0], det->p[3][1]), // top left
+     cv::Point(det->p[0][0], det->p[0][1]), // bottom left
+     cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+  }
+
+  apriltag_detections_destroy(detections);
+
+  return tags_data;
+}
+
 Pose2D DetectApriltag::convertTo2DPose(const apriltag_pose_t& pose) {
     return tag_calculate.convertTo2DPose(pose);
 }

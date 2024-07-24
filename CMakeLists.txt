@@ -28,3 +28,6 @@ target_link_libraries(example_detect ${OpenCV_LIBS} apriltag)
 
 add_executable(example_detect_gst example/example_detect_gst.cpp src/simple_tag.cpp)
 target_link_libraries(example_detect_gst ${OpenCV_LIBS} apriltag)
+
+add_executable(example_detect_pic example/example_detect_pic.cpp src/simple_tag.cpp)
+target_link_libraries(example_detect_pic ${OpenCV_LIBS} apriltag)
