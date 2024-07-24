@@ -34,9 +34,9 @@ typedef struct {
 } Pose2D;
 
 typedef struct {
-    double x; // X座標：右方向
-    double y; // Y座標：下方向
-    double z; // Z座標：前方向
+    double x; // X座標：前方向
+    double y; // Y座標：左方向
+    double z; // Z座標：上方向
     double roll;  // X軸周りの回転
     double pitch; // Y軸周りの回転
     double yaw;   // Z軸周りの回転
