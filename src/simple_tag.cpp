@@ -220,7 +220,7 @@ std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame
   return tags_data;
 }
 
-std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<int, double>>& tag_id_size_pairs){
+std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<uint16_t, double>>& tag_id_size_pairs){
   std::vector<apriltag_t> tags_data;
 
   if(!detect_tag(frame)){

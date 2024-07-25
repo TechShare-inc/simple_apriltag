@@ -7,12 +7,10 @@
 #include <optional>
 
 typedef struct {
-    uint16_t tag1_id;
-    uint16_t tag2_id;
+    std::pair<uint16_t, double> tag1_id_size;
+    std::pair<uint16_t, double> tag2_id_size;
     double tag2_y_from_tag1; // Y座標：左方向
     double tag2_z_from_tag1; // Z座標：上方向
-    double tag1_size;        // タグ1のサイズ
-    double tag2_size;        // タグ2のサイズ
 } tag_pair_t;
 
 typedef struct {

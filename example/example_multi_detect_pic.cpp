@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     cv::Mat output_frame;
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
 
-    tag_pair_t pair_config = {301, 302, -0.0485, 0.0, 0.039, 0.039};  // タグID 301と302のペアの設定、タグサイズを追加
+    tag_pair_t pair_config = {{301, 0.039}, {302, 0.039}, -0.0485, 0.0};  // タグID 301と302のペアの設定、タグサイズを追加
 
     auto marker_pair_opt = pose_estimator.detectAndEstimatePair(frame, output_frame, pair_config);
     if (marker_pair_opt) {

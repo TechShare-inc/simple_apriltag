@@ -1,13 +1,11 @@
+
 #include "multi_marker_pose_estimator.h"
 #include "pose_utils.h"
 #include <iostream>
 #include <cmath>
 
 std::optional<marker_pair_t> MultiMarkerPoseEstimator::detectAndEstimatePair(cv::Mat& frame, cv::Mat& output_frame, const tag_pair_t& pair_config) {
-    std::vector<std::pair<int, double>> tag_id_size_pairs = {
-        {pair_config.tag1_id, pair_config.tag1_size},
-        {pair_config.tag2_id, pair_config.tag2_size}
-    };
+    std::vector<std::pair<uint16_t, double>> tag_id_size_pairs = { pair_config.tag1_id_size, pair_config.tag2_id_size };
     
     std::vector<apriltag_t> tags = detector.detect_multiple_apriltags(frame, output_frame, tag_id_size_pairs);
 
@@ -15,9 +13,9 @@ std::optional<marker_pair_t> MultiMarkerPoseEstimator::detectAndEstimatePair(cv:
     apriltag_t* tag2 = nullptr;
 
     for (auto& tag : tags) {
-        if (tag.apriltag_id == pair_config.tag1_id) {
+        if (tag.apriltag_id == pair_config.tag1_id_size.first) {
             tag1 = &tag;
-        } else if (tag.apriltag_id == pair_config.tag2_id) {
+        } else if (tag.apriltag_id == pair_config.tag2_id_size.first) {
             tag2 = &tag;
         }
     }
@@ -62,7 +60,7 @@ bool MultiMarkerPoseEstimator::validateRelativePose(const Pose3D& pose1, const P
     double y = translation.y();
     double z = translation.z();
 
-    double max_tag_size = std::max(pair_config.tag1_size, pair_config.tag2_size);
+    double max_tag_size = std::max(pair_config.tag1_id_size.second, pair_config.tag2_id_size.second);
 
     double y_error = std::abs(y - pair_config.tag2_y_from_tag1);
     double z_error = std::abs(z - pair_config.tag2_z_from_tag1);

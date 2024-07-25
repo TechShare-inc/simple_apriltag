@@ -73,7 +73,7 @@ public:
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame, int tag_id);
   std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame);
-  std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<int, double>>& tag_id_size_pairs);
+  std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<uint16_t, double>>& tag_id_size_pairs);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };
