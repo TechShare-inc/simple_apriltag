@@ -17,14 +17,14 @@ typedef struct{
   uint8_t marker_flag;
   uint16_t apriltag_id;
   apriltag_pose_t pose;
-}apriltag_t;
+} apriltag_t;
 
 typedef struct{
   double CAM_FX; // [px]
   double CAM_FY; // [px]
   double CAM_CX; // [px]: half of camera width
   double CAM_CY; // [px]: half of camera height
-}cam_info_t;
+} cam_info_t;
 
 typedef struct {
     double x; // x座標：右方向
@@ -49,6 +49,7 @@ public:
   TagCalculate(){}
   TagCalculate(const cam_info_t& cameraInfo);
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det);
+  void tag_calculate(apriltag_t& data, apriltag_detection_t* det, double tag_size);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };
@@ -72,6 +73,7 @@ public:
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame);
   apriltag_t detect_apriltag(cv::Mat& frame, cv::Mat& output_frame, int tag_id);
   std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame);
+  std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<int, double>>& tag_id_size_pairs);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
 };

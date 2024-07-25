@@ -3,18 +3,35 @@
 TagCalculate::TagCalculate(const cam_info_t& cameraInfo)
  : cam_info(cameraInfo) {}
 
-void TagCalculate::tag_calculate(apriltag_t& data, apriltag_detection_t* det){
-  apriltag_detection_info_t info;
+void TagCalculate::tag_calculate(apriltag_t& data, apriltag_detection_t* det) {
+    apriltag_detection_info_t info;
     info.det = det;
     info.tagsize = TAG_SIZE;
     info.fx = cam_info.CAM_FX;
     info.fy = cam_info.CAM_FY;
     info.cx = cam_info.CAM_CX;
     info.cy = cam_info.CAM_CY;
-  
-  apriltag_pose_t pose;
 
-  double err = estimate_tag_pose(&info, &pose);
+    apriltag_pose_t pose;
+    double err = estimate_tag_pose(&info, &pose);
+
+    data.marker_flag = 1;
+    data.apriltag_id = det->id;
+    data.pose = pose;
+}
+
+void TagCalculate::tag_calculate(apriltag_t& data, apriltag_detection_t* det, double tag_size) {
+    apriltag_detection_info_t info;
+    info.det = det;
+    info.tagsize = tag_size;
+    info.fx = cam_info.CAM_FX;
+    info.fy = cam_info.CAM_FY;
+    info.cx = cam_info.CAM_CX;
+    info.cy = cam_info.CAM_CY;
+
+    apriltag_pose_t pose;
+    double err = estimate_tag_pose(&info, &pose);
+
     data.marker_flag = 1;
     data.apriltag_id = det->id;
     data.pose = pose;
@@ -196,6 +213,41 @@ std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame
      cv::Point(det->p[3][0], det->p[3][1]), // top left
      cv::Point(det->p[0][0], det->p[0][1]), // bottom left
      cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+  }
+
+  apriltag_detections_destroy(detections);
+
+  return tags_data;
+}
+
+std::vector<apriltag_t> DetectApriltag::detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<int, double>>& tag_id_size_pairs){
+  std::vector<apriltag_t> tags_data;
+
+  if(!detect_tag(frame)){
+    // マーカー検出がない場合
+    apriltag_detections_destroy(detections);
+    return tags_data;
+  }
+
+  // マーカー検出があった場合: calculate tag-pose
+  apriltag_detection_t *det;
+  for(int i = 0; i < zarray_size(detections); i++) {
+    zarray_get(detections, i, &det);
+
+    for(const auto& pair : tag_id_size_pairs) {
+      if(det->id == pair.first) {
+        apriltag_t data;
+        tag_calculate.tag_calculate(data, det, pair.second);
+        tags_data.push_back(data);
+
+        // draw
+        draw(output_frame,
+          cv::Point(det->p[2][0], det->p[2][1]), // top right
+          cv::Point(det->p[3][0], det->p[3][1]), // top left
+          cv::Point(det->p[0][0], det->p[0][1]), // bottom left
+          cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+      }
+    }
   }
 
   apriltag_detections_destroy(detections);

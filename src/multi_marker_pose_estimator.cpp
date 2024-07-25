@@ -4,7 +4,12 @@
 #include <cmath>
 
 std::optional<marker_pair_t> MultiMarkerPoseEstimator::detectAndEstimatePair(cv::Mat& frame, cv::Mat& output_frame, const tag_pair_t& pair_config) {
-    std::vector<apriltag_t> tags = detector.detect_multiple_apriltags(frame, output_frame);
+    std::vector<std::pair<int, double>> tag_id_size_pairs = {
+        {pair_config.tag1_id, pair_config.tag1_size},
+        {pair_config.tag2_id, pair_config.tag2_size}
+    };
+    
+    std::vector<apriltag_t> tags = detector.detect_multiple_apriltags(frame, output_frame, tag_id_size_pairs);
 
     apriltag_t* tag1 = nullptr;
     apriltag_t* tag2 = nullptr;
@@ -50,11 +55,20 @@ bool MultiMarkerPoseEstimator::validateRelativePose(const Pose3D& pose1, const P
     tf2::Transform transform2 = createTransform(pose2.x, pose2.y, pose2.z, pose2.roll, pose2.pitch, pose2.yaw);
 
     tf2::Transform relative_transform = transform1.inverse() * transform2;
+    
+    // Extract translation components
+    tf2::Vector3 translation = relative_transform.getOrigin();
+    double x = translation.x();
+    double y = translation.y();
+    double z = translation.z();
 
     double max_tag_size = std::max(pair_config.tag1_size, pair_config.tag2_size);
 
-    double y_error_percentage = std::abs(relative_transform.getOrigin().y() - pair_config.tag2_y_from_tag1) / max_tag_size * 100.0;
-    double z_error_percentage = std::abs(relative_transform.getOrigin().z() - pair_config.tag2_z_from_tag1) / max_tag_size * 100.0;
+    double y_error = std::abs(y - pair_config.tag2_y_from_tag1);
+    double z_error = std::abs(z - pair_config.tag2_z_from_tag1);
+    
+    double y_error_percentage = y_error / max_tag_size * 100.0;
+    double z_error_percentage = z_error / max_tag_size * 100.0;
 
     std::cout << "Relative Pose Error: Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
 

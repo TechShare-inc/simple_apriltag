@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
     }
     std::string image_path = argv[1];
 
-    cam_info_t cam_info = {826.1, 826.1, 640, 360};
+    cam_info_t cam_info = {528.433756558705, 528.433756558705, 320.5, 240.5}; // diffbot
     double THRESHOLD_PERCENTAGE = 10.0;
 
     MultiMarkerPoseEstimator pose_estimator;
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     cv::Mat output_frame;
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
 
-    tag_pair_t pair_config = {301, 302, 0.15, 0.0, 0.15, 0.2};  // タグID 301と302のペアの設定、タグサイズを追加
+    tag_pair_t pair_config = {301, 302, -0.0485, 0.0, 0.039, 0.039};  // タグID 301と302のペアの設定、タグサイズを追加
 
     auto marker_pair_opt = pose_estimator.detectAndEstimatePair(frame, output_frame, pair_config);
     if (marker_pair_opt) {
