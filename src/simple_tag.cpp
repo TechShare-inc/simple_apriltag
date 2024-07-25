@@ -17,6 +17,7 @@ void TagCalculate::tag_calculate(apriltag_t& data, apriltag_detection_t* det) {
 
     data.marker_flag = 1;
     data.apriltag_id = det->id;
+    data.size = TAG_SIZE;
     data.pose = pose;
 }
 
@@ -34,6 +35,7 @@ void TagCalculate::tag_calculate(apriltag_t& data, apriltag_detection_t* det, do
 
     data.marker_flag = 1;
     data.apriltag_id = det->id;
+    data.size = tag_size;
     data.pose = pose;
 }
 

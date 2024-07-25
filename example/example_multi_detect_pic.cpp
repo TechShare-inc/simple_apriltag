@@ -24,44 +24,26 @@ int main(int argc, char** argv) {
     cv::Mat output_frame;
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
 
-    tag_pair_t pair_config = {{301, 0.039}, {302, 0.039}, -0.0485, 0.0};  // タグID 301と302のペアの設定、タグサイズを追加
+    // トーナメント形式の構造を定義
+    tag_tournament_node_t root = {
+        {{301, 0.039}, {302, 0.039}, -0.0485, 0.0},
+        nullptr,
+        nullptr
+    };
 
-    auto marker_pair_opt = pose_estimator.detectAndEstimatePair(frame, output_frame, pair_config);
-    if (marker_pair_opt) {
-        const marker_pair_t& marker_pair = marker_pair_opt.value();
-        std::cout << "Detected Marker 1 ID: " << marker_pair.marker1.apriltag_id << std::endl;
-        Pose3D pose1 = pose_estimator.detector.convertTo3DPose(marker_pair.marker1.pose);
-        std::cout << "Marker 1 Pose: x=" << pose1.x
-                  << ", y=" << pose1.y
-                  << ", z=" << pose1.z
-                  << ", roll=" << pose1.roll
-                  << ", pitch=" << pose1.pitch
-                  << ", yaw=" << pose1.yaw << std::endl;
-
-        std::cout << "Detected Marker 2 ID: " << marker_pair.marker2.apriltag_id << std::endl;
-        Pose3D pose2 = pose_estimator.detector.convertTo3DPose(marker_pair.marker2.pose);
-        std::cout << "Marker 2 Pose: x=" << pose2.x
-                  << ", y=" << pose2.y
-                  << ", z=" << pose2.z
-                  << ", roll=" << pose2.roll
-                  << ", pitch=" << pose2.pitch
-                  << ", yaw=" << pose2.yaw << std::endl;
-
-        std::cout << "Average Pose: x=" << marker_pair.average_pose.x
-                  << ", y=" << marker_pair.average_pose.y
-                  << ", z=" << marker_pair.average_pose.z
-                  << ", roll=" << marker_pair.average_pose.roll
-                  << ", pitch=" << marker_pair.average_pose.pitch
-                  << ", yaw=" << marker_pair.average_pose.yaw << std::endl;
-
-        bool is_valid = pose_estimator.validateRelativePose(pose1, pose2, pair_config, THRESHOLD_PERCENTAGE);
-        if (is_valid) {
-            std::cout << "The relative pose is valid." << std::endl;
-        } else {
-            std::cerr << "The relative pose is not valid." << std::endl;
-        }
+    tag_info_t detected_tag = pose_estimator.detectAndEstimate(frame, output_frame, root);
+    
+    if (detected_tag.marker_flag == 1) {
+        std::cout << "Detected Tag ID: " << detected_tag.id << std::endl;
+        std::cout << "Tag Size: " << detected_tag.size << std::endl;
+        std::cout << "Tag Pose: x=" << detected_tag.pose.x
+                  << ", y=" << detected_tag.pose.y
+                  << ", z=" << detected_tag.pose.z
+                  << ", roll=" << detected_tag.pose.roll
+                  << ", pitch=" << detected_tag.pose.pitch
+                  << ", yaw=" << detected_tag.pose.yaw << std::endl;
     } else {
-        std::cerr << "Could not detect a pair of markers." << std::endl;
+        std::cerr << "Could not detect or integrate tags." << std::endl;
     }
 
     if (!output_frame.empty()) {

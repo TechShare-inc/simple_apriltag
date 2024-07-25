@@ -16,6 +16,7 @@
 typedef struct{
   uint8_t marker_flag;
   uint16_t apriltag_id;
+  double size;
   apriltag_pose_t pose;
 } apriltag_t;
 
