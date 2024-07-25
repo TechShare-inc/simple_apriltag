@@ -72,12 +72,18 @@ tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, std::ve
                 combined_tag = (left_tag.size >= right_tag.size) ? left_tag : right_tag;
                 // y, z 平行移動を適用
                 if (combined_tag.id == left_tag.id) {
-                    combined_tag = moveTagInfo(left_tag, node.tag_offset->tag2_y_from_tag1/2 , node.tag_offset->tag2_z_from_tag1/2);
+                    combined_tag = moveTagInfo(left_tag, node.tag_offset->tag2_y_from_tag1 / 2, node.tag_offset->tag2_z_from_tag1 / 2);
                 } else {
-                    combined_tag = moveTagInfo(right_tag, -node.tag_offset->tag2_y_from_tag1/2 , -node.tag_offset->tag2_z_from_tag1/2);
+                    combined_tag = moveTagInfo(right_tag, -node.tag_offset->tag2_y_from_tag1 / 2, -node.tag_offset->tag2_z_from_tag1 / 2);
                 }
                 combined_tag.marker_flag = 1;
             }
+        } else if (left_tag.marker_flag == 1) {
+            combined_tag = moveTagInfo(left_tag, node.tag_offset->tag2_y_from_tag1, node.tag_offset->tag2_z_from_tag1);
+            combined_tag.marker_flag = 1;
+        } else if (right_tag.marker_flag == 1) {
+            combined_tag = moveTagInfo(right_tag, -node.tag_offset->tag2_y_from_tag1, -node.tag_offset->tag2_z_from_tag1);
+            combined_tag.marker_flag = 1;
         }
     } else if (!node.left_child && !node.right_child) {
         // 子ノードを持たない場合、タグIDを探す
@@ -123,11 +129,10 @@ Pose3D MultiMarkerPoseEstimator::calculateAveragePose(const Pose3D& pose1, const
 }
 
 bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag, const tag_info_t& tag1, const tag_info_t& tag2, const tag_offset_t& offset, double threshold_percentage) {
-    std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
-              << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
-    std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
-              << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
-
+    // std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
+    //           << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
+    // std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
+    //           << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
     tf2::Transform transform1 = createTransform(tag1.pose.x, tag1.pose.y, tag1.pose.z, tag1.pose.roll, tag1.pose.pitch, tag1.pose.yaw);
     tf2::Transform transform2 = createTransform(tag2.pose.x, tag2.pose.y, tag2.pose.z, tag2.pose.roll, tag2.pose.pitch, tag2.pose.yaw);
 

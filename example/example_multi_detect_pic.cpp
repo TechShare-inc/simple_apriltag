@@ -38,10 +38,20 @@ int main(int argc, char** argv) {
             std::nullopt,
             tag_offset_t{-0.0485, 0.0},
             std::make_unique<tag_node_t>(tag_node_t{
-                tag_info_t{301, 1, 0.039, {}},
                 std::nullopt,
-                nullptr,
-                nullptr
+                tag_offset_t{0.0, 0.0},
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{301, 1, 0.039, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                }),
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{303, 1, 0.039, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                })
             }),
             std::make_unique<tag_node_t>(tag_node_t{
                 tag_info_t{302, 1, 0.039, {}},
