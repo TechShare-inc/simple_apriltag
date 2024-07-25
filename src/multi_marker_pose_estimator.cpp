@@ -4,6 +4,40 @@
 #include <cmath>
 #include <algorithm> // std::remove
 
+
+tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t root_id, double root_size, uint16_t left_id, uint16_t right_id) {
+    double tag_size_half = root_size / 2;
+    double offset_y = tag_size_half * 10 / 8;
+    double offset_z = offset_y * 1.5;
+
+    return tag_node_t{
+        std::nullopt,
+        tag_offset_t{0.0, -offset_z},
+        std::make_unique<tag_node_t>(tag_node_t{
+            tag_info_t{root_id, 1, root_size, {}},
+            std::nullopt,
+            nullptr,
+            nullptr
+        }),
+        std::make_unique<tag_node_t>(tag_node_t{
+            std::nullopt,
+            tag_offset_t{-offset_y, 0.0},
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{left_id, 1, tag_size_half, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            }),
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{right_id, 1, tag_size_half, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            })
+        })
+    };
+}
+
 std::vector<tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root) {
     std::vector<std::pair<uint16_t, double>> tag_id_size_pairs;
 

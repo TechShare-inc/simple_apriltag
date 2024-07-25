@@ -33,6 +33,7 @@ struct tag_node_t {
 class MultiMarkerPoseEstimator {
 public:
     MultiMarkerPoseEstimator() = default;
+    tag_node_t createTripletTagNode(uint16_t root_id, double root_size, uint16_t left_id, uint16_t right_id);
     tag_info_t detectAndEstimate(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
     DetectApriltag detector;
 
