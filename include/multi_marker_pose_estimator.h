@@ -38,6 +38,7 @@ public:
 
 private:
     std::vector<tag_info_t> collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
+    tag_info_t moveTagInfo(const tag_info_t& tag, double y_offset, double z_offset);
     tag_info_t processNode(const tag_node_t& node, std::vector<tag_info_t>& tag_info_list);
     bool validateAndEstimatePair(tag_info_t& combined_tag, const tag_info_t& tag1, const tag_info_t& tag2, const tag_offset_t& offset, double threshold_percentage);
     Pose3D calculateAveragePose(const Pose3D& pose1, const Pose3D& pose2);
