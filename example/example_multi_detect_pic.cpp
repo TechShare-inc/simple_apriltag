@@ -25,14 +25,35 @@ int main(int argc, char** argv) {
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
 
     // トーナメント形式の構造を定義
-    tag_tournament_node_t root = {
-        {{301, 0.039}, {302, 0.039}, -0.0485, 0.0},
-        nullptr,
-        nullptr
+    tag_node_t root = {
+        std::nullopt,
+        tag_offset_t{0.0, -0.0735},
+        std::make_unique<tag_node_t>(tag_node_t{
+            tag_info_t{501, 1, 0.078, {}},
+            std::nullopt,
+            nullptr,
+            nullptr
+        }),
+        std::make_unique<tag_node_t>(tag_node_t{
+            std::nullopt,
+            tag_offset_t{-0.0485, 0.0},
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{301, 1, 0.039, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            }),
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{302, 1, 0.039, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            })
+        })
     };
 
     tag_info_t detected_tag = pose_estimator.detectAndEstimate(frame, output_frame, root);
-    
+
     if (detected_tag.marker_flag == 1) {
         std::cout << "Detected Tag ID: " << detected_tag.id << std::endl;
         std::cout << "Tag Size: " << detected_tag.size << std::endl;
