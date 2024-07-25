@@ -53,9 +53,15 @@ Pose3D TagCalculate::convertTo3DPose(const apriltag_pose_t& pose) {
     pose3D.x = matd_get(pose.t, 2, 0); // tagのz方向
     pose3D.y = - matd_get(pose.t, 0, 0); // tagのx方向
     pose3D.z = - matd_get(pose.t, 1, 0); // tagのy方向
-    pose3D.roll = atan2(matd_get(pose.R, 1, 0), matd_get(pose.R, 0, 0)); // tagのz軸周り
-    pose3D.pitch = - atan2(matd_get(pose.R, 2, 1), matd_get(pose.R, 2, 2)); // tagのx軸周り
-    pose3D.yaw = - atan2(-matd_get(pose.R, 2, 0), sqrt(pow(matd_get(pose.R, 2, 1), 2) + pow(matd_get(pose.R, 2, 2), 2))); // tagのy軸周り
+
+    // robot座標系においてz-y-x順序になるように、tag座標系においてy-x-z順序で取得
+    double pitch = atan2(-matd_get(pose.R, 2, 0), sqrt(matd_get(pose.R, 0, 0) * matd_get(pose.R, 0, 0) + matd_get(pose.R, 1, 0) * matd_get(pose.R, 1, 0)));
+    double roll = atan2(matd_get(pose.R, 2, 1), matd_get(pose.R, 2, 2));
+    double yaw = atan2(matd_get(pose.R, 1, 0), matd_get(pose.R, 0, 0));
+    pose3D.roll = yaw; // tagのz軸周り
+    pose3D.pitch = - roll; // tagのx軸周り
+    pose3D.yaw = - pitch; // tagのy軸周り
+
     return pose3D;
 }
 
