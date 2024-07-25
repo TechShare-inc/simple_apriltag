@@ -29,7 +29,10 @@ std::vector<tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::Mat& 
     // デバッグ出力: 初期のタグ情報リスト
     std::cout << "Initial tag_info_list:" << std::endl;
     for (const auto& tag_info : tag_info_list) {
-        std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y << ", " << tag_info.pose.z << ")" << std::endl;
+        std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size 
+                  << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y 
+                  << ", " << tag_info.pose.z << ", roll=" << tag_info.pose.roll 
+                  << ", pitch=" << tag_info.pose.pitch << ", yaw=" << tag_info.pose.yaw << ")" << std::endl;
     }
 
     return tag_info_list;
@@ -99,20 +102,41 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag,
 
     // Extract translation components
     tf2::Vector3 translation = relative_transform.getOrigin();
+    double x = translation.x();
     double y = translation.y();
     double z = translation.z();
 
-    double max_tag_size = std::max(tag1.size, tag2.size);
+    // Extract rotation components
+    double roll, pitch, yaw;
+    relative_transform.getBasis().getRPY(roll, pitch, yaw);
 
+    double max_tag_size = std::max(tag1.size, tag2.size);
+    double max_dist = std::max(tag1.pose.x, tag2.pose.x);
+
+    // Calculate errors
+    double x_error = std::abs(x);
     double y_error = std::abs(y - offset.tag2_y_from_tag1);
     double z_error = std::abs(z - offset.tag2_z_from_tag1);
+    double roll_error = std::abs(roll);
+    double pitch_error = std::abs(pitch);
+    double yaw_error = std::abs(yaw);
 
+    double x_error_percentage = x_error / max_dist * 100.0;
     double y_error_percentage = y_error / max_tag_size * 100.0;
     double z_error_percentage = z_error / max_tag_size * 100.0;
+    double roll_error_percentage = roll_error / 3.14 * 100.0;
+    double pitch_error_percentage = pitch_error / 3.14 * 100.0;
+    double yaw_error_percentage = yaw_error / 3.14 * 100.0;
 
-    std::cout << "Relative Pose Error: Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
+    std::cout << "Relative Pose Error: X=" << x_error_percentage << "%, Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
+    std::cout << "Relative Rotation Error: Roll=" << roll_error_percentage << "%, Pitch=" << pitch_error_percentage << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
 
-    if (y_error_percentage <= threshold_percentage && z_error_percentage <= threshold_percentage) {
+    if (x_error_percentage <= threshold_percentage &&
+        y_error_percentage <= threshold_percentage &&
+        z_error_percentage <= threshold_percentage &&
+        roll_error_percentage <= threshold_percentage &&
+        pitch_error_percentage <= threshold_percentage &&
+        yaw_error_percentage <= threshold_percentage) {
         combined_tag.id = tag1.id + tag2.id;
         combined_tag.size = tag1.size + tag2.size;
         combined_tag.pose = calculateAveragePose(tag1.pose, tag2.pose);
