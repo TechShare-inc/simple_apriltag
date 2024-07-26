@@ -20,6 +20,7 @@ typedef struct{
   apriltag_pose_t pose;
 } apriltag_t;
 
+
 typedef struct{
   double CAM_FX; // [px]
   double CAM_FY; // [px]
@@ -43,6 +44,17 @@ typedef struct {
     double yaw;   // Z軸周りの回転
 } Pose3D;
 
+struct tag_info_t {
+    uint16_t id;
+    uint8_t marker_flag;  // 0: 検出失敗または統合失敗, 1: 検出成功または統合成功
+    double size;
+    Pose3D pose;
+
+    bool operator==(const tag_info_t& other) const {
+        return id == other.id;
+    }
+};
+
 class TagCalculate{
 public:
   cam_info_t cam_info;
@@ -53,6 +65,7 @@ public:
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det, double tag_size);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
+  tag_info_t convertToTagInfo(const apriltag_t& apriltag_data);
 };
 
 class DetectApriltag{
@@ -77,6 +90,8 @@ public:
   std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<uint16_t, double>>& tag_id_size_pairs);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
+  tag_info_t detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame);
+  tag_info_t detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame, int tag_id);
 };
 
 #endif  // SIMPLE_TAG_H

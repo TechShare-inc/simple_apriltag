@@ -67,6 +67,17 @@ Pose3D TagCalculate::convertTo3DPose(const apriltag_pose_t& pose) {
     return pose3D;
 }
 
+tag_info_t TagCalculate::convertToTagInfo(const apriltag_t& apriltag_data){
+    tag_info_t tag_info;
+    tag_info.marker_flag = apriltag_data.marker_flag;
+    if (apriltag_data.marker_flag) {
+        tag_info.id = apriltag_data.apriltag_id;
+        tag_info.size = apriltag_data.size;
+        tag_info.pose = convertTo3DPose(apriltag_data.pose);
+    }
+    return tag_info;
+}
+
 DetectApriltag::DetectApriltag()
  : tf(tag36h11_create())
 {
@@ -269,4 +280,14 @@ Pose2D DetectApriltag::convertTo2DPose(const apriltag_pose_t& pose) {
 
 Pose3D DetectApriltag::convertTo3DPose(const apriltag_pose_t& pose) {
     return tag_calculate.convertTo3DPose(pose);
+}
+
+tag_info_t DetectApriltag::detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame) {
+    apriltag_t data = detect_apriltag(frame, output_frame);
+    return tag_calculate.convertToTagInfo(data);
+}
+
+tag_info_t DetectApriltag::detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame, int tag_id) {
+    apriltag_t data = detect_apriltag(frame, output_frame, tag_id);
+    return tag_calculate.convertToTagInfo(data);
 }

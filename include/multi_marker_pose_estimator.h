@@ -7,17 +7,6 @@
 #include <optional>
 #include <memory>
 
-struct tag_info_t {
-    uint16_t id;
-    uint8_t marker_flag;  // 0: 検出失敗または統合失敗, 1: 検出成功または統合成功
-    double size;
-    Pose3D pose;
-
-    bool operator==(const tag_info_t& other) const {
-        return id == other.id;
-    }
-};
-
 struct tag_offset_t {
     double tag2_y_from_tag1; // Y座標：左方向
     double tag2_z_from_tag1; // Z座標：上方向
