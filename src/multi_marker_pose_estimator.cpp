@@ -7,12 +7,12 @@
 
 tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t root_id, double root_size, uint16_t left_id, uint16_t right_id) {
     double tag_size_half = root_size / 2;
-    double offset_y = tag_size_half * 10 / 8;
-    double offset_z = offset_y * 1.5;
+    double offset_y_1to2 = tag_size_half * 10 / 8;
+    double offset_z_2to3 = offset_y_1to2 * 1.5;
 
     return tag_node_t{
         std::nullopt,
-        tag_offset_t{0.0, -offset_z},
+        tag_offset_t{0.0, -offset_z_2to3},
         std::make_unique<tag_node_t>(tag_node_t{
             tag_info_t{root_id, 1, root_size, {}},
             std::nullopt,
@@ -21,7 +21,7 @@ tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t root_id, doub
         }),
         std::make_unique<tag_node_t>(tag_node_t{
             std::nullopt,
-            tag_offset_t{-offset_y, 0.0},
+            tag_offset_t{-offset_y_1to2, 0.0},
             std::make_unique<tag_node_t>(tag_node_t{
                 tag_info_t{left_id, 1, tag_size_half, {}},
                 std::nullopt,
@@ -33,6 +33,60 @@ tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t root_id, doub
                 std::nullopt,
                 nullptr,
                 nullptr
+            })
+        })
+    };
+}
+
+tag_node_t MultiMarkerPoseEstimator::createQuattroPlusNode(uint16_t root_id, double root_size, uint16_t ll_id, uint16_t left_id, uint16_t right_id, uint16_t rr_id) {
+    double tag_size_half = root_size / 2;
+    double offset_y_1to2 = tag_size_half * 10 / 8;
+    double offset_y_2to4 = root_size;
+    double offset_z_4to5 = offset_y_1to2 * 1.5;
+
+    return tag_node_t{
+        std::nullopt,
+        tag_offset_t{0.0, offset_z_4to5},
+        std::make_unique<tag_node_t>(tag_node_t{
+            tag_info_t{root_id, 1, root_size, {}},
+            std::nullopt,
+            nullptr,
+            nullptr
+        }),
+        std::make_unique<tag_node_t>(tag_node_t{
+            std::nullopt,
+            tag_offset_t{-offset_y_2to4, 0.0},
+            std::make_unique<tag_node_t>(tag_node_t{
+                std::nullopt,
+                tag_offset_t{offset_y_1to2, 0.0},
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{left_id, 1, tag_size_half, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                }),
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{ll_id, 1, tag_size_half, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                })
+            }),
+            std::make_unique<tag_node_t>(tag_node_t{
+                std::nullopt,
+                tag_offset_t{-offset_y_1to2, 0.0},
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{right_id, 1, tag_size_half, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                }),
+                std::make_unique<tag_node_t>(tag_node_t{
+                    tag_info_t{rr_id, 1, tag_size_half, {}},
+                    std::nullopt,
+                    nullptr,
+                    nullptr
+                })
             })
         })
     };
@@ -99,7 +153,7 @@ tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, std::ve
         tag_info_t right_tag = processNode(*node.right_child, tag_info_list);
 
         if (left_tag.marker_flag == 1 && right_tag.marker_flag == 1) {
-            if (validateAndEstimatePair(combined_tag, left_tag, right_tag, *node.tag_offset, 10.0)) {
+            if (validateAndEstimatePair(combined_tag, left_tag, right_tag, *node.tag_offset, 30.0)) {
                 combined_tag.marker_flag = 1;
             } else {
                 // SIZEの小さくない方を選択
@@ -163,10 +217,10 @@ Pose3D MultiMarkerPoseEstimator::calculateAveragePose(const Pose3D& pose1, const
 }
 
 bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag, const tag_info_t& tag1, const tag_info_t& tag2, const tag_offset_t& offset, double threshold_percentage) {
-    // std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
-    //           << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
-    // std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
-    //           << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
+    std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
+              << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
+    std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
+              << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
     tf2::Transform transform1 = createTransform(tag1.pose.x, tag1.pose.y, tag1.pose.z, tag1.pose.roll, tag1.pose.pitch, tag1.pose.yaw);
     tf2::Transform transform2 = createTransform(tag2.pose.x, tag2.pose.y, tag2.pose.z, tag2.pose.roll, tag2.pose.pitch, tag2.pose.yaw);
 

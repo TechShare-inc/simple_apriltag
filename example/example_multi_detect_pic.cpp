@@ -52,14 +52,21 @@ int main(int argc, char** argv) {
     //     })
     // };
 
-    // タグ情報を設定
-    uint16_t root_id = 501;
-    double root_size = 0.078;
-    uint16_t left_id = 301;
-    uint16_t right_id = 302;
+    // // タグ情報を設定
+    // uint16_t root_id = 501;
+    // double root_size = 0.078;
+    // uint16_t left_id = 301;
+    // uint16_t right_id = 302;
+    // tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
 
-    // トーナメント形式の構造を生成
-    tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
+    // タグ情報を設定
+    uint16_t root_id = 401;
+    double root_size = 0.0348;
+    uint16_t ll_id = 402;
+    uint16_t l_id = 403;
+    uint16_t r_id = 404;
+    uint16_t rr_id = 405;
+    tag_node_t root = pose_estimator.createQuattroPlusNode(root_id, root_size, ll_id, l_id, r_id, rr_id);
 
     tag_info_t detected_tag = pose_estimator.detectAndEstimate(frame, output_frame, root);
 
