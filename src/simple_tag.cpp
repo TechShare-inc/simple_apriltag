@@ -148,17 +148,38 @@ apriltag_t DetectApriltag::detect_apriltag(cv::Mat& frame, cv::Mat& output_frame
     return data;
   }
 
-  // マーカー検出があったの場合: calculate tag-pose
-  apriltag_detection_t *det;
-  zarray_get(detections, 0, &det);
-  tag_calculate.tag_calculate(data, det);
+  // マーカー検出があった場合、最大サイズのマーカーを探す
+  int max_index = -1;
+  double max_area = 0.0;
 
-  // draw
-  draw(output_frame,
-   cv::Point(det->p[2][0], det->p[2][1]), // top right
-   cv::Point(det->p[3][0], det->p[3][1]), // top left
-   cv::Point(det->p[0][0], det->p[0][1]), // bottom left
-   cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+  for (int i = 0; i < zarray_size(detections); i++) {
+    apriltag_detection_t *det;
+    zarray_get(detections, i, &det);
+
+    // マーカーの四隅の座標を使って面積を計算
+    double width = cv::norm(cv::Point2f(det->p[0][0], det->p[0][1]) - cv::Point2f(det->p[1][0], det->p[1][1]));
+    double height = cv::norm(cv::Point2f(det->p[1][0], det->p[1][1]) - cv::Point2f(det->p[2][0], det->p[2][1]));
+    double area = width * height;
+
+    // 面積が最大か確認
+    if (area > max_area) {
+      max_area = area;
+      max_index = i;
+    }
+  }
+
+  if (max_index != -1) {
+    apriltag_detection_t *det;
+    zarray_get(detections, max_index, &det);
+    tag_calculate.tag_calculate(data, det);
+
+    // draw 最大サイズのマーカーを描画
+    draw(output_frame,
+         cv::Point(det->p[2][0], det->p[2][1]), // top right
+         cv::Point(det->p[3][0], det->p[3][1]), // top left
+         cv::Point(det->p[0][0], det->p[0][1]), // bottom left
+         cv::Point(det->p[1][0], det->p[1][1])); // bottom right
+  }
 
   apriltag_detections_destroy(detections);
 
