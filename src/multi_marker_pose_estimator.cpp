@@ -114,14 +114,14 @@ std::vector<tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::Mat& 
         tag_info_list.push_back(tag_info);
     }
 
-    // デバッグ出力: 初期のタグ情報リスト
-    std::cout << "Initial tag_info_list:" << std::endl;
-    for (const auto& tag_info : tag_info_list) {
-        std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size 
-                  << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y 
-                  << ", " << tag_info.pose.z << ", roll=" << tag_info.pose.roll 
-                  << ", pitch=" << tag_info.pose.pitch << ", yaw=" << tag_info.pose.yaw << ")" << std::endl;
-    }
+    // // デバッグ出力: 初期のタグ情報リスト
+    // std::cout << "Initial tag_info_list:" << std::endl;
+    // for (const auto& tag_info : tag_info_list) {
+    //     std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size 
+    //               << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y 
+    //               << ", " << tag_info.pose.z << ", roll=" << tag_info.pose.roll 
+    //               << ", pitch=" << tag_info.pose.pitch << ", yaw=" << tag_info.pose.yaw << ")" << std::endl;
+    // }
 
     return tag_info_list;
 }
@@ -193,11 +193,11 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
 
     tag_info_t final_combined_tag = processNode(root, tag_info_list);
 
-    // デバッグ出力: 統合後のタグ情報リスト
-    std::cout << "Final tag_info_list:" << std::endl;
-    for (const auto& tag_info : tag_info_list) {
-        std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y << ", " << tag_info.pose.z << "), Flag: " << static_cast<int>(tag_info.marker_flag) << std::endl;
-    }
+    // // デバッグ出力: 統合後のタグ情報リスト
+    // std::cout << "Final tag_info_list:" << std::endl;
+    // for (const auto& tag_info : tag_info_list) {
+    //     std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y << ", " << tag_info.pose.z << "), Flag: " << static_cast<int>(tag_info.marker_flag) << std::endl;
+    // }
 
     return final_combined_tag;
 }
@@ -217,10 +217,10 @@ Pose3D MultiMarkerPoseEstimator::calculateAveragePose(const Pose3D& pose1, const
 }
 
 bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag, const tag_info_t& tag1, const tag_info_t& tag2, const tag_offset_t& offset, double threshold_percentage) {
-    std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
-              << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
-    std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
-              << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
+    // std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
+    //           << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
+    // std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
+    //           << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
     tf2::Transform transform1 = createTransform(tag1.pose.x, tag1.pose.y, tag1.pose.z, tag1.pose.roll, tag1.pose.pitch, tag1.pose.yaw);
     tf2::Transform transform2 = createTransform(tag2.pose.x, tag2.pose.y, tag2.pose.z, tag2.pose.roll, tag2.pose.pitch, tag2.pose.yaw);
 
@@ -254,8 +254,8 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag,
     double pitch_error_percentage = pitch_error / 3.14 * 100.0;
     double yaw_error_percentage = yaw_error / 3.14 * 100.0;
 
-    std::cout << "Relative Pose Error: X=" << x_error_percentage << "%, Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
-    std::cout << "Relative Rotation Error: Roll=" << roll_error_percentage << "%, Pitch=" << pitch_error_percentage << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
+    // std::cout << "Relative Pose Error: X=" << x_error_percentage << "%, Y=" << y_error_percentage << "%, Z=" << z_error_percentage << "%" << std::endl;
+    // std::cout << "Relative Rotation Error: Roll=" << roll_error_percentage << "%, Pitch=" << pitch_error_percentage << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
 
     if (x_error_percentage <= threshold_percentage &&
         y_error_percentage <= threshold_percentage &&
