@@ -17,7 +17,7 @@ struct tag_offset_t {
 };
 
 struct tag_node_t {
-    std::optional<tag_info_t> tag_info;
+    std::optional<quot_tag_info_t> tag_info;
     std::optional<tag_offset_t> tag_offset;
     std::unique_ptr<tag_node_t> left_child;
     std::unique_ptr<tag_node_t> right_child;
@@ -90,11 +90,11 @@ public:
     DetectApriltag detector;
 
 private:
-    std::vector<tag_info_t> collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
-    tag_info_t moveTagInfo(const tag_info_t& tag, const tag_offset_t& offset);
-    tag_info_t processNode(const tag_node_t& node, std::vector<tag_info_t>& tag_info_list);
-    bool validateAndEstimatePair(tag_info_t& combined_tag, const tag_info_t& tag1, const tag_info_t& tag2, const tag_offset_t& offset, double threshold);
-    Pose3D calculateAveragePose(const Pose3D& pose1, const Pose3D& pose2);
+    std::vector<quot_tag_info_t> collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
+    quot_tag_info_t moveTagInfo(const quot_tag_info_t& tag, const tag_offset_t& offset);
+    quot_tag_info_t processNode(const tag_node_t& node, std::vector<quot_tag_info_t>& tag_info_list);
+    bool validateAndEstimatePair(quot_tag_info_t& combined_tag, const quot_tag_info_t& tag1, const quot_tag_info_t& tag2, const tag_offset_t& offset, double threshold);
+    QuatPose3D calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2);
 };
 
 #endif // MULTI_MARKER_POSE_ESTIMATOR_H

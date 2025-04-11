@@ -67,6 +67,57 @@ Pose3D TagCalculate::convertTo3DPose(const apriltag_pose_t& pose) {
     return pose3D;
 }
 
+QuatPose3D TagCalculate::convertToQuat3DPose(const apriltag_pose_t& pose) {
+    QuatPose3D quatPose3D;
+    
+    // 座標の変換
+    quatPose3D.x = matd_get(pose.t, 2, 0);  // tagのz方向
+    quatPose3D.y = -matd_get(pose.t, 0, 0); // tagのx方向
+    quatPose3D.z = -matd_get(pose.t, 1, 0); // tagのy方向
+
+    // 回転行列からクォータニオンへの変換
+    double r11 = matd_get(pose.R, 0, 0);
+    double r12 = matd_get(pose.R, 0, 1);
+    double r13 = matd_get(pose.R, 0, 2);
+    double r21 = matd_get(pose.R, 1, 0);
+    double r22 = matd_get(pose.R, 1, 1);
+    double r23 = matd_get(pose.R, 1, 2);
+    double r31 = matd_get(pose.R, 2, 0);
+    double r32 = matd_get(pose.R, 2, 1);
+    double r33 = matd_get(pose.R, 2, 2);
+
+    // 回転行列からクォータニオンへの変換（標準的なアルゴリズム）
+    double trace = r11 + r22 + r33;
+    
+    if (trace > 0) {
+        double s = 0.5 / sqrt(trace + 1.0);
+        quatPose3D.qw = 0.25 / s;
+        quatPose3D.qx = (r32 - r23) * s;
+        quatPose3D.qy = (r13 - r31) * s;
+        quatPose3D.qz = (r21 - r12) * s;
+    } else if (r11 > r22 && r11 > r33) {
+        double s = 2.0 * sqrt(1.0 + r11 - r22 - r33);
+        quatPose3D.qw = (r32 - r23) / s;
+        quatPose3D.qx = 0.25 * s;
+        quatPose3D.qy = (r12 + r21) / s;
+        quatPose3D.qz = (r13 + r31) / s;
+    } else if (r22 > r33) {
+        double s = 2.0 * sqrt(1.0 + r22 - r11 - r33);
+        quatPose3D.qw = (r13 - r31) / s;
+        quatPose3D.qx = (r12 + r21) / s;
+        quatPose3D.qy = 0.25 * s;
+        quatPose3D.qz = (r23 + r32) / s;
+    } else {
+        double s = 2.0 * sqrt(1.0 + r33 - r11 - r22);
+        quatPose3D.qw = (r21 - r12) / s;
+        quatPose3D.qx = (r13 + r31) / s;
+        quatPose3D.qy = (r23 + r32) / s;
+        quatPose3D.qz = 0.25 * s;
+    }
+
+    return quatPose3D;
+}
+
 tag_info_t TagCalculate::convertToTagInfo(const apriltag_t& apriltag_data){
     tag_info_t tag_info;
     tag_info.marker_flag = apriltag_data.marker_flag;
@@ -301,6 +352,10 @@ Pose2D DetectApriltag::convertTo2DPose(const apriltag_pose_t& pose) {
 
 Pose3D DetectApriltag::convertTo3DPose(const apriltag_pose_t& pose) {
     return tag_calculate.convertTo3DPose(pose);
+}
+
+QuatPose3D DetectApriltag::convertToQuat3DPose(const apriltag_pose_t& pose) {
+    return tag_calculate.convertToQuat3DPose(pose);
 }
 
 tag_info_t DetectApriltag::detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame) {
