@@ -60,16 +60,12 @@ class TestTFPublisher(Node):
         tag1_robot_tf.transform.translation.x = 0.0
         tag1_robot_tf.transform.translation.y = 0.0
         tag1_robot_tf.transform.translation.z = 0.0
-        q_fixed = tft.quaternion_from_euler(0.0, -math.pi/2, math.pi)
+        q_fixed = tft.quaternion_from_euler(0.0, -math.pi/2, math.pi/2)
         self.get_logger().info(f"Quaternion values - x: {q_fixed[0]}, y: {q_fixed[1]}, z: {q_fixed[2]}, w: {q_fixed[3]}")
-        # tag1_moving_tf.transform.rotation.x = q_fixed[0]
-        # tag1_moving_tf.transform.rotation.y = q_fixed[1]
-        # tag1_moving_tf.transform.rotation.z = q_fixed[2]
-        # tag1_moving_tf.transform.rotation.w = q_fixed[3]
-        tag1_robot_tf.transform.rotation.x = q_orig[0]
-        tag1_robot_tf.transform.rotation.y = q_orig[1]
-        tag1_robot_tf.transform.rotation.z = q_orig[2]
-        tag1_robot_tf.transform.rotation.w = q_orig[3]
+        tag1_robot_tf.transform.rotation.x = 0.5
+        tag1_robot_tf.transform.rotation.y = -0.5
+        tag1_robot_tf.transform.rotation.z = 0.5
+        tag1_robot_tf.transform.rotation.w = 0.5
         transforms.append(tag1_robot_tf)
 
         # # Tag1 の TF (world -> tag1)

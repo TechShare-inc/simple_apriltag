@@ -479,12 +479,17 @@ QuatPose3D MultiMarkerPoseEstimator::convertToQuat3DPose(const apriltag_pose_t& 
     tf2::Quaternion q_orig;
     m.getRotation(q_orig);
 
-    // 固定の回転 q_fixed を生成: apriltagのPoseは、x軸 = -y, y軸 = -z, z軸 = x
+    // 固定の回転 q_fixed を生成
+	// x,y,z in apriltag座標系 === -y,-z,x in robot_frame座標系
     tf2::Quaternion q_fixed(-0.5, 0.5, -0.5, 0.5);
+
+    // 固定の回転 q_convert_robot_frame を生成
+	// apriltagの座標系の取り方が、robot座標系っぽくなるように変換（マーカーを立てたときに、変換がアイデンティティになるように）
+    tf2::Quaternion q_convert_robot_frame(0.5, -0.5, 0.5, 0.5);
 
     // 全体のクォータニオンは q_total = q_fixed * q_orig
     // ※ tf2 のクォータニオンの掛け算は、左側の回転が先に適用される順序です
-    tf2::Quaternion q_total = q_fixed * q_orig;
+    tf2::Quaternion q_total = q_fixed * q_orig * q_convert_robot_frame;
     q_total.normalize();
 
     // q_total の各成分を QuatPose3D に設定
