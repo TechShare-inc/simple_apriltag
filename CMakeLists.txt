@@ -38,7 +38,7 @@ add_executable(example_detect example/example_detect.cpp src/simple_tag.cpp)
 add_executable(example_detect_gst example/example_detect_gst.cpp src/simple_tag.cpp)
 add_executable(example_detect_pic example/example_detect_pic.cpp src/simple_tag.cpp)
 add_executable(example_multi_detect_pic example/example_multi_detect_pic.cpp src/simple_tag.cpp src/multi_marker_pose_estimator.cpp src/pose_utils.cpp)
-add_executable(example_multi_detect example/example_multi_detect.cpp src/simple_tag.cpp src/multi_marker_pose_estimator.cpp)
+add_executable(example_multi_detect example/example_multi_detect.cpp src/simple_tag.cpp src/multi_marker_pose_estimator.cpp src/pose_utils.cpp)
 
 # リンクするライブラリを指定
 ament_target_dependencies(test_pose_utils
@@ -49,6 +49,11 @@ ament_target_dependencies(test_pose_utils
 target_link_libraries(example_detect ${OpenCV_LIBS} apriltag)
 target_link_libraries(example_detect_gst ${OpenCV_LIBS} apriltag)
 target_link_libraries(example_detect_pic ${OpenCV_LIBS} apriltag)
+
+ament_target_dependencies(example_multi_detect
+  "tf2"
+  "tf2_geometry_msgs"
+)
 target_link_libraries(example_multi_detect ${OpenCV_LIBS} apriltag)
 
 

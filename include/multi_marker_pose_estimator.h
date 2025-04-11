@@ -2,7 +2,7 @@
 #define MULTI_MARKER_POSE_ESTIMATOR_H
 
 #include "simple_tag.h"
-// #include "pose_utils.h"
+#include "pose_utils.h"
 #include <vector>
 #include <optional>
 #include <memory>
@@ -26,7 +26,26 @@ struct tag_node_t {
 class MultiMarkerPoseEstimator {
 public:
     MultiMarkerPoseEstimator() = default;
-    
+
+    /*** @brief TripletTagノード構造を作成します。
+     * 
+     * 構造は以下の通りです:
+     *       +---------+
+     *       |   Root  |
+     *       +---------+
+     *       |  L | R  |
+     *       +---------+
+     * Rootは親タグ、Lは左子タグ、Rは右子タグを示します。
+     * 子タグ (L, R) は親タグ (Root) の半分の大きさで、30°傾いています。
+     * 
+     * @param root_id 親タグのID
+     * @param root_size 親タグのサイズ
+     * @param left_id 左子タグのID
+     * @param right_id 右子タグのID
+     * @return TripletTagを表すtag_node_t構造体
+     */
+    tag_node_t createTriplet3DTagNode(uint16_t parent_tag_id, double parent_tag_size, uint16_t left_id, uint16_t right_id);
+
     /*** @brief TripletTagノード構造を作成します。
      * 
      * 構造は以下の通りです:

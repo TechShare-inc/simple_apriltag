@@ -41,41 +41,19 @@ int main(int argc, char** argv) {
     cv::Mat output_frame;
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
 
-
-    // トーナメント形式の構造を定義
-    // tag_node_t root = {
-    //     std::nullopt,
-    //     tag_offset_t{0.0, -0.0735},
-    //     std::make_unique<tag_node_t>(tag_node_t{
-    //         tag_info_t{501, 1, 0.078, {}},
-    //         std::nullopt,
-    //         nullptr,
-    //         nullptr
-    //     }),
-    //     std::make_unique<tag_node_t>(tag_node_t{
-    //         std::nullopt,
-    //         tag_offset_t{-0.0485, 0.0},
-    //         std::make_unique<tag_node_t>(tag_node_t{
-    //             tag_info_t{301, 1, 0.039, {}},
-    //             std::nullopt,
-    //             nullptr,
-    //             nullptr
-    //         }),
-    //         std::make_unique<tag_node_t>(tag_node_t{
-    //             tag_info_t{302, 1, 0.039, {}},
-    //             std::nullopt,
-    //             nullptr,
-    //             nullptr
-    //         })
-    //     })
-    // };
-
     // タグ情報を設定
-    uint16_t root_id = 521;
+    uint16_t root_id = 531;
     double root_size = 0.088;
-    uint16_t left_id = 522;
-    uint16_t right_id = 523;
-    tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
+    uint16_t left_id = 532;
+    uint16_t right_id = 533;
+    tag_node_t root = pose_estimator.createTriplet3DTagNode(root_id, root_size, left_id, right_id);
+
+    // // タグ情報を設定
+    // uint16_t root_id = 521;
+    // double root_size = 0.088;
+    // uint16_t left_id = 522;
+    // uint16_t right_id = 523;
+    // tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
 
     // // タグ情報を設定
     // uint16_t root_id = 401;

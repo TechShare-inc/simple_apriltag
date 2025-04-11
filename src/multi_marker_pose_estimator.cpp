@@ -1,5 +1,5 @@
 #include "multi_marker_pose_estimator.h"
-// #include "pose_utils.h"
+#include "pose_utils.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
@@ -7,6 +7,45 @@
 // ヘルパー：オフセットをスケールする (例えば半分のオフセットを適用する際)
 static tag_offset_t scaleOffset(const tag_offset_t& offset, double factor) {
     return tag_offset_t{offset.dx * factor, offset.dy * factor, offset.dz * factor, offset.dyaw * factor};
+}
+
+tag_node_t MultiMarkerPoseEstimator::createTriplet3DTagNode(uint16_t parent_tag_id, double parent_tag_size, uint16_t left_id, uint16_t right_id) {
+    double child_size = parent_tag_size / 2;                       // 子タグは親タグの半分
+    double half_child_x = child_size / 4;                          // 子タグのベッパリ高さの半分
+    double child_with_border_size = child_size * 10 / 8;           // 子タグ（白い部分込み）の大きさ
+    double offset_child_x = child_with_border_size * 1.732 / 4;    // 左の子タグの中心からみた、右の子タグの中心(x)
+    double offset_child_y = child_with_border_size * 3 / 4;        // 左の子タグの中心からみた、右の子タグの中心(y)
+    double half_full_tag_height = child_with_border_size * 1.5;    // 全体タグの白い部分込みの高さの半分
+    double child_arg = 3.1415 * 60 / 180;                          // 子タグ同士のなす角
+
+    return tag_node_t{
+        std::nullopt,
+        // 上の親タグの中心からみた、下２つの子タグの中心の相対位置
+        tag_offset_t{-half_child_x, 0.0, -half_full_tag_height, 0.0},
+        std::make_unique<tag_node_t>(tag_node_t{
+            tag_info_t{parent_tag_id, 1, parent_tag_size, {}},
+            std::nullopt,
+            nullptr,
+            nullptr
+        }),
+        std::make_unique<tag_node_t>(tag_node_t{
+            std::nullopt,
+            // 左の子タグの中心からみた、右の子タグの中心
+            tag_offset_t{offset_child_x, -offset_child_y, 0.0, child_arg},
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{left_id, 1, child_size, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            }),
+            std::make_unique<tag_node_t>(tag_node_t{
+                tag_info_t{right_id, 1, child_size, {}},
+                std::nullopt,
+                nullptr,
+                nullptr
+            })
+        })
+    };
 }
 
 tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t parent_tag_id, double parent_tag_size, uint16_t left_id, uint16_t right_id) {
@@ -43,6 +82,7 @@ tag_node_t MultiMarkerPoseEstimator::createTripletTagNode(uint16_t parent_tag_id
         })
     };
 }
+
 tag_node_t MultiMarkerPoseEstimator::createQuattroPlusNode(uint16_t parent_tag_id, double parent_tag_size, 
                                                              uint16_t ll_id, uint16_t left_id, 
                                                              uint16_t right_id, uint16_t rr_id) {
@@ -243,43 +283,62 @@ Pose3D MultiMarkerPoseEstimator::calculateAveragePose(const Pose3D& pose1, const
 
     return average_pose;
 }
+
 bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag, 
                                                        const tag_info_t& tag1, 
                                                        const tag_info_t& tag2, 
                                                        const tag_offset_t& offset, 
                                                        double threshold_percentage) {
-    // tag1 にオフセットを適用して、tag2 の予測される pose を計算
-    double cos_yaw = cos(tag1.pose.yaw);
-    double sin_yaw = sin(tag1.pose.yaw);
-    double predicted_x = tag1.pose.x + offset.dx * cos_yaw - offset.dy * sin_yaw;
-    double predicted_y = tag1.pose.y + offset.dx * sin_yaw + offset.dy * cos_yaw;
-    double predicted_z = tag1.pose.z + offset.dz;
-    double predicted_yaw = tag1.pose.yaw + offset.dyaw;
-    
-    // roll と pitch は固定と仮定するので、予測は tag1 の値そのまま
-    double predicted_roll = tag1.pose.roll;
-    double predicted_pitch = tag1.pose.pitch;
-    
-    // 各軸の誤差（絶対値）
-    double x_error = fabs(predicted_x - tag2.pose.x);
-    double y_error = fabs(predicted_y - tag2.pose.y);
-    double z_error = fabs(predicted_z - tag2.pose.z);
-    double roll_error = fabs(predicted_roll - tag2.pose.roll);
-    double pitch_error = fabs(predicted_pitch - tag2.pose.pitch);
-    double yaw_error = fabs(predicted_yaw - tag2.pose.yaw);
-    
-    // 位置の参照基準として大きい方のタグサイズを利用（位置誤差の正規化）
+    // 入力タグの初期Pose表示（デバッグ用）
+    std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x << ", y=" << tag1.pose.y << ", z=" << tag1.pose.z
+              << ", roll=" << tag1.pose.roll << ", pitch=" << tag1.pose.pitch << ", yaw=" << tag1.pose.yaw << std::endl;
+    std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x << ", y=" << tag2.pose.y << ", z=" << tag2.pose.z
+              << ", roll=" << tag2.pose.roll << ", pitch=" << tag2.pose.pitch << ", yaw=" << tag2.pose.yaw << std::endl;
+
+    // 各タグのPoseからTFを作成する
+    tf2::Transform transform1 = createTransform(tag1.pose.x, tag1.pose.y, tag1.pose.z, 
+                                                  tag1.pose.roll, tag1.pose.pitch, tag1.pose.yaw);
+    tf2::Transform transform2 = createTransform(tag2.pose.x, tag2.pose.y, tag2.pose.z, 
+                                                  tag2.pose.roll, tag2.pose.pitch, tag2.pose.yaw);
+
+    // measured_transform： tag1 から tag2 への相対変換
+    tf2::Transform measured_transform = transform1.inverse() * transform2;
+
+    // 期待される変化量 offset（translation: dx,dy,dz と yaw成分: dyaw、rollとpitchは 0 とする）
+    tf2::Transform expected_transform = createTransform(offset.dx, offset.dy, offset.dz, 0.0, 0.0, offset.dyaw);
+
+    // error_transform = expected_transform⁻¹ * measured_transform
+    // このエラーがアイデンティティ（ほぼゼロ変化）に近いほど、期待値と実際の変換が合致している
+    tf2::Transform error_transform = expected_transform.inverse() * measured_transform;
+
+    // エラーの平行移動成分
+    tf2::Vector3 error_translation = error_transform.getOrigin();
+    double error_x = fabs(error_translation.x());
+    double error_y = fabs(error_translation.y());
+    double error_z = fabs(error_translation.z());
+
+    // エラーの回転成分（RPY 表現で取得）
+    double error_roll, error_pitch, error_yaw;
+    error_transform.getBasis().getRPY(error_roll, error_pitch, error_yaw);
+
+    // 位置成分は、タグサイズなどのスケールで正規化できると考え、
+    // ここでは大きい方のタグサイズを基準にパーセンテージを計算
     double reference_size = std::max(tag1.size, tag2.size);
-    // 角度の基準として π（約 3.14）を利用
-    double reference_angle = 3.14;
-    
-    double x_error_percentage = (x_error / reference_size) * 100.0;
-    double y_error_percentage = (y_error / reference_size) * 100.0;
-    double z_error_percentage = (z_error / reference_size) * 100.0;
-    double roll_error_percentage = (roll_error / reference_angle) * 100.0;
-    double pitch_error_percentage = (pitch_error / reference_angle) * 100.0;
-    double yaw_error_percentage = (yaw_error / reference_angle) * 100.0;
-    
+    double x_error_percentage = (error_x / reference_size) * 100.0;
+    double y_error_percentage = (error_y / reference_size) * 100.0;
+    double z_error_percentage = (error_z / reference_size) * 100.0;
+    // 回転誤差はπ(≈3.14)を基準とする（角度はラジアン）
+    double roll_error_percentage = (fabs(error_roll) / 3.14) * 100.0;
+    double pitch_error_percentage = (fabs(error_pitch) / 3.14) * 100.0;
+    double yaw_error_percentage = (fabs(error_yaw) / 3.14) * 100.0;
+
+    std::cout << "Error Translation: X=" << error_x << ", Y=" << error_y << ", Z=" << error_z << std::endl;
+    std::cout << "Error Rotation: Roll=" << error_roll << ", Pitch=" << error_pitch << ", Yaw=" << error_yaw << std::endl;
+    std::cout << "Error Percentages: X=" << x_error_percentage << "%, Y=" << y_error_percentage 
+              << "%, Z=" << z_error_percentage << "%" << std::endl;
+    std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage << "%, Pitch=" 
+              << pitch_error_percentage << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
+
     // すべての誤差が指定の閾値（％）以内であればタグの統合を行う
     if (x_error_percentage <= threshold_percentage &&
         y_error_percentage <= threshold_percentage &&
@@ -293,7 +352,7 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(tag_info_t& combined_tag,
         combined_tag.marker_flag = 1; // 統合成功
         return true;
     }
-    
+
     combined_tag.marker_flag = 0; // 統合失敗
     return false;
 }
