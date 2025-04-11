@@ -170,7 +170,7 @@ std::vector<quot_tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::
     std::vector<quot_tag_info_t> tag_info_list;
 
     for (auto& tag : tags) {
-        quot_tag_info_t tag_info = { tag.apriltag_id, 1, tag.size, detector.convertToQuat3DPose(tag.pose) };
+        quot_tag_info_t tag_info = { tag.apriltag_id, 1, tag.size, convertToQuat3DPose(tag.pose) };
         tag_info_list.push_back(tag_info);
     }
 
@@ -298,9 +298,9 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
                       final_combined_tag.pose.qw);
     double roll, pitch, yaw;
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    rpy_pose.roll = roll;
-    rpy_pose.pitch = pitch;
-    rpy_pose.yaw = yaw;
+    rpy_pose.roll = yaw;
+    rpy_pose.pitch = - roll;
+    rpy_pose.yaw = - pitch;
 
     // 最終的な tag_info_t に変換して返す
     tag_info_t output_tag;
@@ -353,7 +353,7 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
                                                        const tag_offset_t& offset, 
                                                        double threshold_percentage) {
     // --- デバッグ用：入力タグの初期 Pose 表示 ---
-    // クォータニオンから RPY への変換のため、各タグのクォータニオンを生成する
+    // （デバッグ用に各タグのクォータニオンからRPYを取得して表示）
     tf2::Quaternion q1(tag1.pose.qx, tag1.pose.qy, tag1.pose.qz, tag1.pose.qw);
     double tag1_roll, tag1_pitch, tag1_yaw;
     tf2::Matrix3x3(q1).getRPY(tag1_roll, tag1_pitch, tag1_yaw);
@@ -387,34 +387,36 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
     // measured_transform： tag1 から tag2 への相対変換
     tf2::Transform measured_transform = transform1.inverse() * transform2;
 
-    // 期待される変化量 offset（translation: dx,dy,dz と yaw 成分: dyaw、roll と pitch は 0 とする）
-    // offset は RPY 表現になっているので、ここでは yaw のみを利用してクォータニオンに変換
+    // --- 期待される変化量 offset の適用 ---
+    // 回転成分 offset.dyaw はタグ座標系での y 軸回りの回転として扱う
+    // ここでは setRotation を用いて、軸‐角（axis: (0,1,0)）からクォータニオンを直接生成する
     tf2::Quaternion expected_q;
-    expected_q.setRPY(0.0, -offset.dyaw, 0.0);  // robot座標系的な見方でみたdyawは、tag座標系でy軸に当たる
+    expected_q.setRotation(tf2::Vector3(0, 0, 1), offset.dyaw);
     tf2::Transform expected_transform;
     expected_transform.setOrigin(tf2::Vector3(offset.dx, offset.dy, offset.dz));
     expected_transform.setRotation(expected_q);
 
-    // error_transform = expected_transform⁻¹ * measured_transform
+    // --- error_transform の算出 ---
+    // ここまではすべてクォータニオンおよび変換行列による計算で行い、RPY変換は使用していません。
     tf2::Transform error_transform = expected_transform.inverse() * measured_transform;
 
     // --- 誤差の算出 ---
-    // 平行移動成分のエラー
+    // 平行移動成分のエラー（直接取得）
     tf2::Vector3 error_translation = error_transform.getOrigin();
     double error_x = fabs(error_translation.x());
     double error_y = fabs(error_translation.y());
     double error_z = fabs(error_translation.z());
 
-    // 回転成分は RPY 表現で取得
+    // ここから回転誤差算出のために、error_transform の回転を RPY 表現に変換
     double error_roll, error_pitch, error_yaw;
-    error_transform.getBasis().getRPY(error_roll, error_pitch, error_yaw);
+    tf2::Matrix3x3(error_transform.getRotation()).getRPY(error_roll, error_pitch, error_yaw);
 
-    // タグサイズ（大きい方のタグサイズ）で正規化してパーセンテージを計算
+    // タグサイズ（大きい方のタグサイズ）で正規化し、パーセンテージとして計算
     double reference_size = std::max(tag1.size, tag2.size);
     double x_error_percentage = (error_x / reference_size) * 100.0;
     double y_error_percentage = (error_y / reference_size) * 100.0;
     double z_error_percentage = (error_z / reference_size) * 100.0;
-    // 回転誤差は π (約3.14) を基準に（角度はラジアン）
+    // 回転誤差は π (約3.14) を基準（角度はラジアン）
     double roll_error_percentage = (fabs(error_roll) / 3.14) * 100.0;
     double pitch_error_percentage = (fabs(error_pitch) / 3.14) * 100.0;
     double yaw_error_percentage = (fabs(error_yaw) / 3.14) * 100.0;
@@ -449,4 +451,47 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
 
     combined_tag.marker_flag = 0; // 統合失敗
     return false;
+}
+
+QuatPose3D MultiMarkerPoseEstimator::convertToQuat3DPose(const apriltag_pose_t& pose) {
+    QuatPose3D quatPose3D;
+    
+    // 座標の変換
+    quatPose3D.x = matd_get(pose.t, 2, 0);  // tagのz方向
+    quatPose3D.y = -matd_get(pose.t, 0, 0); // tagのx方向
+    quatPose3D.z = -matd_get(pose.t, 1, 0); // tagのy方向
+
+    // apriltag_pose_t 内の回転行列の各要素を取得
+    double r11 = matd_get(pose.R, 0, 0);
+    double r12 = matd_get(pose.R, 0, 1);
+    double r13 = matd_get(pose.R, 0, 2);
+    double r21 = matd_get(pose.R, 1, 0);
+    double r22 = matd_get(pose.R, 1, 1);
+    double r23 = matd_get(pose.R, 1, 2);
+    double r31 = matd_get(pose.R, 2, 0);
+    double r32 = matd_get(pose.R, 2, 1);
+    double r33 = matd_get(pose.R, 2, 2);
+
+    // apriltag の回転行列を tf2::Matrix3x3 によって q_orig へ変換
+    tf2::Matrix3x3 m(r11, r12, r13,
+                     r21, r22, r23,
+                     r31, r32, r33);
+    tf2::Quaternion q_orig;
+    m.getRotation(q_orig);
+
+    // 固定の回転 q_fixed を生成: apriltagのPoseは、x軸 = -y, y軸 = -z, z軸 = x
+    tf2::Quaternion q_fixed(-0.5, 0.5, -0.5, 0.5);
+
+    // 全体のクォータニオンは q_total = q_fixed * q_orig
+    // ※ tf2 のクォータニオンの掛け算は、左側の回転が先に適用される順序です
+    tf2::Quaternion q_total = q_fixed * q_orig;
+    q_total.normalize();
+
+    // q_total の各成分を QuatPose3D に設定
+    quatPose3D.qw = q_total.getW();
+    quatPose3D.qx = q_total.getX();
+    quatPose3D.qy = q_total.getY();
+    quatPose3D.qz = q_total.getZ();
+
+    return quatPose3D;
 }

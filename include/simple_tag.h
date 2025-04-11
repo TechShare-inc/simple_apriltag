@@ -44,32 +44,11 @@ typedef struct {
     double yaw;   // Z軸周りの回転
 } Pose3D;
 
-typedef struct {
-    double x;     // X座標：前方向
-    double y;     // Y座標：左方向
-    double z;     // Z座標：上方向
-    double qw;    // クォータニオンの実部
-    double qx;    // クォータニオンのx成分
-    double qy;    // クォータニオンのy成分
-    double qz;    // クォータニオンのz成分
-} QuatPose3D;
-
 struct tag_info_t {
     uint16_t id;
     uint8_t marker_flag;  // 0: 検出失敗または統合失敗, 1: 検出成功または統合成功
     double size;
     Pose3D pose;
-
-    bool operator==(const tag_info_t& other) const {
-        return id == other.id;
-    }
-};
-
-struct quot_tag_info_t {
-    uint16_t id;
-    uint8_t marker_flag;  // 0: 検出失敗または統合失敗, 1: 検出成功または統合成功
-    double size;
-    QuatPose3D pose;
 
     bool operator==(const tag_info_t& other) const {
         return id == other.id;
@@ -86,7 +65,6 @@ public:
   void tag_calculate(apriltag_t& data, apriltag_detection_t* det, double tag_size);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
-  QuatPose3D convertToQuat3DPose(const apriltag_pose_t& pose);
   tag_info_t convertToTagInfo(const apriltag_t& apriltag_data);
 };
 
@@ -112,7 +90,6 @@ public:
   std::vector<apriltag_t> detect_multiple_apriltags(cv::Mat& frame, cv::Mat& output_frame, const std::vector<std::pair<uint16_t, double>>& tag_id_size_pairs);
   Pose2D convertTo2DPose(const apriltag_pose_t& pose);
   Pose3D convertTo3DPose(const apriltag_pose_t& pose);
-  QuatPose3D convertToQuat3DPose(const apriltag_pose_t& pose);
   tag_info_t detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame);
   tag_info_t detectAndConvertTagInfo(cv::Mat& frame, cv::Mat& output_frame, int tag_id);
 };

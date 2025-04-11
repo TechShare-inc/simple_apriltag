@@ -8,6 +8,27 @@
 #include <memory>
 #include <cmath>
 
+typedef struct {
+    double x;     // X座標：前方向
+    double y;     // Y座標：左方向
+    double z;     // Z座標：上方向
+    double qw;    // クォータニオンの実部
+    double qx;    // クォータニオンのx成分
+    double qy;    // クォータニオンのy成分
+    double qz;    // クォータニオンのz成分
+} QuatPose3D;
+
+struct quot_tag_info_t {
+    uint16_t id;
+    uint8_t marker_flag;  // 0: 検出失敗または統合失敗, 1: 検出成功または統合成功
+    double size;
+    QuatPose3D pose;
+
+    bool operator==(const tag_info_t& other) const {
+        return id == other.id;
+    }
+};
+
 // 変更後のオフセット構造体：x,y,zとyawのオフセットを保持（roll, pitchは固定）
 struct tag_offset_t {
     double dx;     // X方向オフセット
@@ -95,6 +116,7 @@ private:
     quot_tag_info_t processNode(const tag_node_t& node, std::vector<quot_tag_info_t>& tag_info_list);
     bool validateAndEstimatePair(quot_tag_info_t& combined_tag, const quot_tag_info_t& tag1, const quot_tag_info_t& tag2, const tag_offset_t& offset, double threshold);
     QuatPose3D calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2);
+    QuatPose3D convertToQuat3DPose(const apriltag_pose_t& pose);
 };
 
 #endif // MULTI_MARKER_POSE_ESTIMATOR_H
