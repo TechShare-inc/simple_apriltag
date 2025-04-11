@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(marker_pose_estimation)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # ROS2の依存関係を追加
 find_package(ament_cmake REQUIRED)
@@ -38,6 +38,7 @@ add_executable(example_detect example/example_detect.cpp src/simple_tag.cpp)
 add_executable(example_detect_gst example/example_detect_gst.cpp src/simple_tag.cpp)
 add_executable(example_detect_pic example/example_detect_pic.cpp src/simple_tag.cpp)
 add_executable(example_multi_detect_pic example/example_multi_detect_pic.cpp src/simple_tag.cpp src/multi_marker_pose_estimator.cpp src/pose_utils.cpp)
+add_executable(example_multi_detect example/example_multi_detect.cpp src/simple_tag.cpp src/multi_marker_pose_estimator.cpp)
 
 # リンクするライブラリを指定
 ament_target_dependencies(test_pose_utils
@@ -48,6 +49,7 @@ ament_target_dependencies(test_pose_utils
 target_link_libraries(example_detect ${OpenCV_LIBS} apriltag)
 target_link_libraries(example_detect_gst ${OpenCV_LIBS} apriltag)
 target_link_libraries(example_detect_pic ${OpenCV_LIBS} apriltag)
+target_link_libraries(example_multi_detect ${OpenCV_LIBS} apriltag)
 
 
 ament_target_dependencies(example_multi_detect_pic
@@ -63,5 +65,6 @@ install(TARGETS
   example_detect_gst
   example_detect_pic
   example_multi_detect_pic
+  example_multi_detect
   DESTINATION lib/${PROJECT_NAME}
 )
