@@ -5,7 +5,8 @@
 
 int main() {
     // カメラパラメータを設定
-    cam_info_t cam_info = {826.1, 826.1, 640, 360}; // fx, fy, cx, cy: go2 HD cam
+    // cam_info_t cam_info = {826.1, 826.1, 640, 360}; // fx, fy, cx, cy: go2 HD cam
+    cam_info_t cam_info = {632.7, 630.6, 640, 480}; // cyborg incam
 
     // AprilTag検出器を初期化
     DetectApriltag detector(cam_info);

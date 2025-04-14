@@ -3,11 +3,11 @@
 #include "multi_marker_pose_estimator.h"
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <image_path>" << std::endl;
-        return -1;
-    }
-    std::string image_path = argv[1];
+    // if (argc < 2) {
+    //     std::cerr << "Usage: " << argv[0] << " <image_path>" << std::endl;
+    //     return -1;
+    // }
+    // std::string image_path = argv[1];
 
     // cam_info_t cam_info = {528.433756558705, 528.433756558705, 320.5, 240.5}; // diffbot
     cam_info_t cam_info = {632.7, 630.6, 640, 480}; // cyborg incam
@@ -15,42 +15,30 @@ int main(int argc, char** argv) {
     MultiMarkerPoseEstimator pose_estimator;
     pose_estimator.detector.setCamInfo(cam_info);
 
-    cv::Mat frame = cv::imread(image_path);
-    if (frame.empty()) {
-        std::cerr << "Cannot open image: " << image_path << std::endl;
+    // cv::Mat frame = cv::imread(image_path);
+    // if (frame.empty()) {
+    //     std::cerr << "Cannot open image: " << image_path << std::endl;
+    //     return -1;
+    // }
+
+    // cv::Mat output_frame;
+    // frame.copyTo(output_frame); // Ensure output_frame is initialized properly
+
+
+    // GStreamerパイプラインでVideoCaptureオブジェクトを開く
+    cv::VideoCapture cap(0);
+    if (!cap.isOpened()) {
+        std::cerr << "cannot open camera" << std::endl;
         return -1;
     }
 
+    cv::Mat frame;
+    while (true) {
+        // カメラからフレームをキャプチャ
+        cap >> frame;
+        if (frame.empty()) break;
     cv::Mat output_frame;
     frame.copyTo(output_frame); // Ensure output_frame is initialized properly
-
-    // トーナメント形式の構造を定義
-    // tag_node_t root = {
-    //     std::nullopt,
-    //     tag_offset_t{0.0, -0.0735},
-    //     std::make_unique<tag_node_t>(tag_node_t{
-    //         tag_info_t{501, 1, 0.078, {}},
-    //         std::nullopt,
-    //         nullptr,
-    //         nullptr
-    //     }),
-    //     std::make_unique<tag_node_t>(tag_node_t{
-    //         std::nullopt,
-    //         tag_offset_t{-0.0485, 0.0},
-    //         std::make_unique<tag_node_t>(tag_node_t{
-    //             tag_info_t{301, 1, 0.039, {}},
-    //             std::nullopt,
-    //             nullptr,
-    //             nullptr
-    //         }),
-    //         std::make_unique<tag_node_t>(tag_node_t{
-    //             tag_info_t{302, 1, 0.039, {}},
-    //             std::nullopt,
-    //             nullptr,
-    //             nullptr
-    //         })
-    //     })
-    // };
 
     // タグ情報を設定
     uint16_t root_id = 531;
@@ -60,10 +48,10 @@ int main(int argc, char** argv) {
     tag_node_t root = pose_estimator.createTriplet3DTagNode(root_id, root_size, left_id, right_id);
 
     // // タグ情報を設定
-    // uint16_t root_id = 501;
-    // double root_size = 0.078;
-    // uint16_t left_id = 301;
-    // uint16_t right_id = 302;
+    // uint16_t root_id = 521;
+    // double root_size = 0.088;
+    // uint16_t left_id = 522;
+    // uint16_t right_id = 523;
     // tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
 
     // // タグ情報を設定
@@ -92,9 +80,13 @@ int main(int argc, char** argv) {
 
     if (!output_frame.empty()) {
         cv::imshow("Detected Markers", output_frame);
-        cv::waitKey(0);
+        // cv::waitKey(0);
+        // 'q' キーでループを抜ける
+        if (cv::waitKey(1) == 'q') break;
     } else {
         std::cerr << "Output frame is empty, cannot display." << std::endl;
+    }
+
     }
 
     return 0;
