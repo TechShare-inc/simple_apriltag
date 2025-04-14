@@ -11,7 +11,6 @@ int main(int argc, char** argv) {
 
     // cam_info_t cam_info = {528.433756558705, 528.433756558705, 320.5, 240.5}; // diffbot
     cam_info_t cam_info = {632.7, 630.6, 640, 480}; // cyborg incam
-    double THRESHOLD_PERCENTAGE = 10.0;
 
     MultiMarkerPoseEstimator pose_estimator;
     pose_estimator.detector.setCamInfo(cam_info);

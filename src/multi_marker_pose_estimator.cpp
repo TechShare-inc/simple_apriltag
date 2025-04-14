@@ -298,9 +298,9 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
                       final_combined_tag.pose.qw);
     double roll, pitch, yaw;
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    rpy_pose.roll = yaw;
-    rpy_pose.pitch = - roll;
-    rpy_pose.yaw = - pitch;
+    rpy_pose.roll = roll;
+    rpy_pose.pitch = pitch;
+    rpy_pose.yaw = yaw;
 
     // 最終的な tag_info_t に変換して返す
     tag_info_t output_tag;
@@ -312,15 +312,36 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
     return output_tag;
 }
 
+// 補助関数: -π～πの範囲の角度 a, b の平均を、境界補正を行って求める
+static double averageAngle(double a, double b) {
+    // まず角度差を計算し、[-π, π] の範囲に正規化する
+    double diff = b - a;
+    while (diff < -M_PI)
+        diff += 2.0 * M_PI;
+    while (diff > M_PI)
+        diff -= 2.0 * M_PI;
+
+    // 補正した角度差の半分を加算して平均値を得る
+    double avg = a + diff / 2.0;
+
+    // 平均値が再び [-π, π] を超えないように正規化する
+    while (avg < -M_PI)
+        avg += 2.0 * M_PI;
+    while (avg > M_PI)
+        avg -= 2.0 * M_PI;
+
+    return avg;
+}
+
 QuatPose3D MultiMarkerPoseEstimator::calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2) {
     QuatPose3D average_pose;
 
-    // 位置は単純に平均
+    // 位置は単純な平均を行う
     average_pose.x = (pose1.x + pose2.x) / 2.0;
     average_pose.y = (pose1.y + pose2.y) / 2.0;
     average_pose.z = (pose1.z + pose2.z) / 2.0;
 
-    // それぞれのクォータニオンから RPY への変換
+    // クォータニオンからそれぞれ RPY に変換する
     tf2::Quaternion q1(pose1.qx, pose1.qy, pose1.qz, pose1.qw);
     double roll1, pitch1, yaw1;
     tf2::Matrix3x3(q1).getRPY(roll1, pitch1, yaw1);
@@ -329,12 +350,12 @@ QuatPose3D MultiMarkerPoseEstimator::calculateAveragePose(const QuatPose3D& pose
     double roll2, pitch2, yaw2;
     tf2::Matrix3x3(q2).getRPY(roll2, pitch2, yaw2);
 
-    // RPY の平均を計算（角度は単純平均）
-    double avg_roll = (roll1 + roll2) / 2.0;
-    double avg_pitch = (pitch1 + pitch2) / 2.0;
-    double avg_yaw = (yaw1 + yaw2) / 2.0;
+    // 各角度の平均を計算（境界近傍での値のずれを補正）
+    double avg_roll  = averageAngle(roll1, roll2);
+    double avg_pitch = averageAngle(pitch1, pitch2);
+    double avg_yaw   = averageAngle(yaw1, yaw2);
 
-    // 平均 RPY からクォータニオンを生成
+    // 平均した RPY からクォータニオンを生成する
     tf2::Quaternion q_avg;
     q_avg.setRPY(avg_roll, avg_pitch, avg_yaw);
 

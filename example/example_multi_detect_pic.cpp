@@ -9,8 +9,8 @@ int main(int argc, char** argv) {
     }
     std::string image_path = argv[1];
 
-    cam_info_t cam_info = {528.433756558705, 528.433756558705, 320.5, 240.5}; // diffbot
-    double THRESHOLD_PERCENTAGE = 10.0;
+    // cam_info_t cam_info = {528.433756558705, 528.433756558705, 320.5, 240.5}; // diffbot
+    cam_info_t cam_info = {632.7, 630.6, 640, 480}; // cyborg incam
 
     MultiMarkerPoseEstimator pose_estimator;
     pose_estimator.detector.setCamInfo(cam_info);
@@ -52,6 +52,13 @@ int main(int argc, char** argv) {
     //     })
     // };
 
+    // タグ情報を設定
+    uint16_t root_id = 531;
+    double root_size = 0.088;
+    uint16_t left_id = 532;
+    uint16_t right_id = 533;
+    tag_node_t root = pose_estimator.createTriplet3DTagNode(root_id, root_size, left_id, right_id);
+
     // // タグ情報を設定
     // uint16_t root_id = 501;
     // double root_size = 0.078;
@@ -59,14 +66,14 @@ int main(int argc, char** argv) {
     // uint16_t right_id = 302;
     // tag_node_t root = pose_estimator.createTripletTagNode(root_id, root_size, left_id, right_id);
 
-    // タグ情報を設定
-    uint16_t root_id = 401;
-    double root_size = 0.0348;
-    uint16_t ll_id = 402;
-    uint16_t l_id = 403;
-    uint16_t r_id = 404;
-    uint16_t rr_id = 405;
-    tag_node_t root = pose_estimator.createQuattroPlusNode(root_id, root_size, ll_id, l_id, r_id, rr_id);
+    // // タグ情報を設定
+    // uint16_t root_id = 401;
+    // double root_size = 0.0348;
+    // uint16_t ll_id = 402;
+    // uint16_t l_id = 403;
+    // uint16_t r_id = 404;
+    // uint16_t rr_id = 405;
+    // tag_node_t root = pose_estimator.createQuattroPlusNode(root_id, root_size, ll_id, l_id, r_id, rr_id);
 
     tag_info_t detected_tag = pose_estimator.detectAndEstimate(frame, output_frame, root);
 
