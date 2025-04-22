@@ -179,10 +179,13 @@ std::vector<quot_tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::
     // // デバッグ出力: 初期のタグ情報リスト
     // std::cout << "Initial tag_info_list:" << std::endl;
     // for (const auto& tag_info : tag_info_list) {
+    //     tf2::Quaternion q(tag_info.pose.qx, tag_info.pose.qy, tag_info.pose.qz, tag_info.pose.qw);
+    //     double tag_roll, tag_pitch, tag_yaw;
+    //     tf2::Matrix3x3(q).getRPY(tag_roll, tag_pitch, tag_yaw);
     //     std::cout << "Tag ID: " << tag_info.id << ", Size: " << tag_info.size 
     //               << ", Pose: (" << tag_info.pose.x << ", " << tag_info.pose.y 
-    //               << ", " << tag_info.pose.z << ", roll=" << tag_info.pose.roll 
-    //               << ", pitch=" << tag_info.pose.pitch << ", yaw=" << tag_info.pose.yaw << ")" << std::endl;
+    //               << ", " << tag_info.pose.z << ", roll=" << tag_roll
+    //               << ", pitch=" << tag_pitch << ", yaw=" << tag_yaw << ")" << std::endl;
     // }
 
     return tag_info_list;
@@ -193,16 +196,6 @@ quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
     const tag_offset_t& offset,
     bool inverse
 ) {
-    // // --- デバッグ出力：関数入力 ---
-    // std::cout << "[MoveHalfTagInfo] Input Tag ID=" << tag.id
-    //           << "  Pos=(x=" << tag.pose.x << ", y=" << tag.pose.y << ", z=" << tag.pose.z << ")"
-    //           << "  OrientQuat=(w=" << tag.pose.qw << ", x=" << tag.pose.qx 
-    //                              << ", y=" << tag.pose.qy << ", z=" << tag.pose.qz << ")"
-    //           << "  Offset=(dx=" << offset.dx << ", dy=" << offset.dy 
-    //                          << ", dz=" << offset.dz << ", dyaw=" << offset.dyaw << ")"
-    //           << "  Inverse=" << (inverse?"true":"false")
-    //           << std::endl;
-
     // 元の Transform を一行で作成
     tf2::Transform original_tf{
       tf2::Quaternion{tag.pose.qx, tag.pose.qy, tag.pose.qz, tag.pose.qw},
@@ -241,13 +234,6 @@ quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
     moved_tag.pose.qx = q_new.getX();
     moved_tag.pose.qy = q_new.getY();
     moved_tag.pose.qz = q_new.getZ();
-
-    // // --- デバッグ出力：関数出力 ---
-    // std::cout << "[MoveHalfTagInfo] Moved  Tag ID=" << moved_tag.id
-    //           << "  Pos=(x=" << moved_tag.pose.x << ", y=" << moved_tag.pose.y << ", z=" << moved_tag.pose.z << ")"
-    //           << "  OrientQuat=(w=" << moved_tag.pose.qw << ", x=" << moved_tag.pose.qx 
-    //                              << ", y=" << moved_tag.pose.qy << ", z=" << moved_tag.pose.qz << ")"
-    //           << std::endl;
 
     return moved_tag;
 }
@@ -327,6 +313,12 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
     output_tag.marker_flag = final_combined_tag.marker_flag;
     output_tag.size = final_combined_tag.size;
     output_tag.pose = rpy_pose;
+
+    // // --- ログ出力 ---
+    // std::cout << "[detectAndEstimate] Tag ID=" << output_tag.id
+    //           << "  Pos=(x="   << rpy_pose.x   << ", y="   << rpy_pose.y   << ", z="   << rpy_pose.z   << ")"
+    //           << "  RPY=(roll=" << rpy_pose.roll << ", pitch=" << rpy_pose.pitch << ", yaw=" << rpy_pose.yaw << ")"
+    //           << std::endl;
 
     return output_tag;
 }
@@ -480,7 +472,7 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
         pitch_error_percentage <= threshold_percentage &&
         yaw_error_percentage <= threshold_percentage) {
         combined_tag.id = tag1.id + tag2.id;
-        combined_tag.size = tag1.size + tag2.size;
+        combined_tag.size = (tag1.size + tag2.size) * 2; // 合成できたので、単純な足し算よりもタグの評価を上げる
         // calculateAveragePose は QuatPose3D の平均を算出する処理に修正済み
         combined_tag.pose = calculateAveragePose(tag1.pose, tag2.pose);
         combined_tag.marker_flag = 1; // 統合成功
