@@ -191,6 +191,99 @@ std::vector<quot_tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::
     return tag_info_list;
 }
 
+// QuatPose3D → Pose3D(RPY) に変換するヘルパー
+static Pose3D toPose3D(const QuatPose3D& qpose) {
+    Pose3D p;
+    p.x     = qpose.x;
+    p.y     = qpose.y;
+    p.z     = qpose.z;
+    tf2::Quaternion q(qpose.qx, qpose.qy, qpose.qz, qpose.qw);
+    tf2::Matrix3x3(q).getRPY(p.roll, p.pitch, p.yaw);
+    return p;
+}
+
+// ２つの Pose3D 間で、許容誤差内かどうか判定する関数
+static bool validatePairRPY(const Pose3D& p1, const Pose3D& p2,
+                            double threshold_pct, double reference_size)
+{
+    auto diff = [](double a, double b) {
+        double d = a - b;
+        while (d < -M_PI) d += 2*M_PI;
+        while (d >  M_PI) d -= 2*M_PI;
+        return fabs(d);
+    };
+
+    //――― 1) 絶対誤差（距離 & 角度） ―――
+    double dx   = fabs(p1.x     - p2.x);
+    double dy   = fabs(p1.y     - p2.y);
+    double dz   = fabs(p1.z     - p2.z);
+    double drad = diff(p1.roll,  p2.roll);
+    double dpid = diff(p1.pitch, p2.pitch);
+    double dyaw = diff(p1.yaw,   p2.yaw);
+
+    //――― 2) 誤差を % 表示に変換 ―――
+    double x_pct    = dx   / reference_size * 100.0;
+    double y_pct    = dy   / reference_size * 100.0;
+    double z_pct    = dz   / reference_size * 100.0;
+    double roll_pct = drad / M_PI           * 100.0;
+    double pitch_pct= dpid / M_PI           * 100.0;
+    double yaw_pct  = dyaw / M_PI           * 100.0;
+
+    //――― 3) ログ出力 ―――
+    std::cout << "[validatePairRPY] Translation deltas: "
+              << "dx=" << dx << ", dy=" << dy << ", dz=" << dz << std::endl;
+    std::cout << "[validatePairRPY] Translation error %: "
+              << "X=" << x_pct << "%, "
+              << "Y=" << y_pct << "%, "
+              << "Z=" << z_pct << "%" << std::endl;
+    std::cout << "[validatePairRPY] Rotation error %: "
+              << "Roll="  << roll_pct  << "%, "
+              << "Pitch=" << pitch_pct << "%, "
+              << "Yaw="   << yaw_pct   << "%" << std::endl;
+
+    //――― 4) 判定 ―――
+    return (x_pct    <= threshold_pct &&
+            y_pct    <= threshold_pct &&
+            z_pct    <= threshold_pct &&
+            roll_pct <= threshold_pct &&
+            pitch_pct<= threshold_pct &&
+            yaw_pct  <= threshold_pct);
+}
+
+// 補助関数: -π～πの範囲の角度 a, b の平均を、境界補正を行って求める
+static double averageAngle(double a, double b) {
+    // まず角度差を計算し、[-π, π] の範囲に正規化する
+    double diff = b - a;
+    while (diff < -M_PI)
+        diff += 2.0 * M_PI;
+    while (diff > M_PI)
+        diff -= 2.0 * M_PI;
+
+    // 補正した角度差の半分を加算して平均値を得る
+    double avg = a + diff / 2.0;
+
+    // 平均値が再び [-π, π] を超えないように正規化する
+    while (avg < -M_PI)
+        avg += 2.0 * M_PI;
+    while (avg > M_PI)
+        avg -= 2.0 * M_PI;
+
+    return avg;
+}
+
+// RPY平均を取って QuatPose3D に戻すヘルパー
+static QuatPose3D averageQuatFromPose(const Pose3D& a, const Pose3D& b) {
+    Pose3D avg;
+    avg.x     = 0.5*(a.x     + b.x);
+    avg.y     = 0.5*(a.y     + b.y);
+    avg.z     = 0.5*(a.z     + b.z);
+    avg.roll  = averageAngle(a.roll,  b.roll);
+    avg.pitch = averageAngle(a.pitch, b.pitch);
+    avg.yaw   = averageAngle(a.yaw,   b.yaw);
+    tf2::Quaternion q; q.setRPY(avg.roll, avg.pitch, avg.yaw);
+    return QuatPose3D{ avg.x, avg.y, avg.z, q.getW(), q.getX(), q.getY(), q.getZ() };
+}
+
 quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
     const quot_tag_info_t& tag,
     const tag_offset_t& offset,
@@ -247,24 +340,36 @@ quot_tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, st
         quot_tag_info_t right_tag = processNode(*node.right_child, tag_info_list);
 
         if (left_tag.marker_flag == 1 && right_tag.marker_flag == 1) {
-            // 統合の際に、２つのタグがともに見つかっていれば、統合をチャレンジし、失敗したら、タグサイズの大きい方を採用する
-            if (validateAndEstimatePair(combined_tag, left_tag, right_tag, *node.tag_offset, 30.0)) {
+            // ① 半オフセット適用
+            auto left_moved  = moveHalfTagInfo(left_tag,  *node.tag_offset, /*inverse=*/false);
+            auto right_moved = moveHalfTagInfo(right_tag, *node.tag_offset, /*inverse=*/true);
+
+            // ② Pose3D(RPY) に変換
+            Pose3D pL = toPose3D(left_moved.pose);
+            Pose3D pR = toPose3D(right_moved.pose);
+
+            // ③ RPYベースで組み合わせ可否判定（サイズは大きい方を基準に）
+            double ref_size = std::max(left_tag.size, right_tag.size);
+            if (validatePairRPY(pL, pR, /*threshold_pct=*/30.0, ref_size)) {
+                // 成功したら平均RPYで合成
+                combined_tag.id         = left_tag.id + right_tag.id;
+                combined_tag.size       = (left_tag.size + right_tag.size) * 2;
+                combined_tag.pose       = averageQuatFromPose(pL, pR);
                 combined_tag.marker_flag = 1;
             } else {
-                combined_tag = (left_tag.size >= right_tag.size) ? left_tag : right_tag;
-                // オフセットの半分を適用して調整
-                if (combined_tag.id == left_tag.id) {
-                    combined_tag = moveHalfTagInfo(left_tag, *node.tag_offset);
+                // フォールバック: 大きい方を半オフセット適用でそのまま使う
+                if (left_tag.size >= right_tag.size) {
+                    combined_tag = left_moved;
                 } else {
-                    combined_tag = moveHalfTagInfo(right_tag, *node.tag_offset, true);
+                    combined_tag = right_moved;
                 }
                 combined_tag.marker_flag = 1;
             }
         } else if (left_tag.marker_flag == 1) {
-            combined_tag = moveHalfTagInfo(left_tag, *node.tag_offset);
+            combined_tag = moveHalfTagInfo(left_tag, *node.tag_offset, /*inverse=*/false);
             combined_tag.marker_flag = 1;
         } else if (right_tag.marker_flag == 1) {
-            combined_tag = moveHalfTagInfo(right_tag, *node.tag_offset, true);
+            combined_tag = moveHalfTagInfo(right_tag, *node.tag_offset, /*inverse=*/true);
             combined_tag.marker_flag = 1;
         }
     } else if (!node.left_child && !node.right_child) {
@@ -321,166 +426,6 @@ tag_info_t MultiMarkerPoseEstimator::detectAndEstimate(cv::Mat& frame, cv::Mat& 
     //           << std::endl;
 
     return output_tag;
-}
-
-// 補助関数: -π～πの範囲の角度 a, b の平均を、境界補正を行って求める
-static double averageAngle(double a, double b) {
-    // まず角度差を計算し、[-π, π] の範囲に正規化する
-    double diff = b - a;
-    while (diff < -M_PI)
-        diff += 2.0 * M_PI;
-    while (diff > M_PI)
-        diff -= 2.0 * M_PI;
-
-    // 補正した角度差の半分を加算して平均値を得る
-    double avg = a + diff / 2.0;
-
-    // 平均値が再び [-π, π] を超えないように正規化する
-    while (avg < -M_PI)
-        avg += 2.0 * M_PI;
-    while (avg > M_PI)
-        avg -= 2.0 * M_PI;
-
-    return avg;
-}
-
-QuatPose3D MultiMarkerPoseEstimator::calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2) {
-    QuatPose3D average_pose;
-
-    // 位置は単純な平均を行う
-    average_pose.x = (pose1.x + pose2.x) / 2.0;
-    average_pose.y = (pose1.y + pose2.y) / 2.0;
-    average_pose.z = (pose1.z + pose2.z) / 2.0;
-
-    // クォータニオンからそれぞれ RPY に変換する
-    tf2::Quaternion q1(pose1.qx, pose1.qy, pose1.qz, pose1.qw);
-    double roll1, pitch1, yaw1;
-    tf2::Matrix3x3(q1).getRPY(roll1, pitch1, yaw1);
-
-    tf2::Quaternion q2(pose2.qx, pose2.qy, pose2.qz, pose2.qw);
-    double roll2, pitch2, yaw2;
-    tf2::Matrix3x3(q2).getRPY(roll2, pitch2, yaw2);
-
-    // 各角度の平均を計算（境界近傍での値のずれを補正）
-    double avg_roll  = averageAngle(roll1, roll2);
-    double avg_pitch = averageAngle(pitch1, pitch2);
-    double avg_yaw   = averageAngle(yaw1, yaw2);
-
-    // 平均した RPY からクォータニオンを生成する
-    tf2::Quaternion q_avg;
-    q_avg.setRPY(avg_roll, avg_pitch, avg_yaw);
-
-    // 結果のクォータニオン成分を average_pose に設定
-    average_pose.qw = q_avg.getW();
-    average_pose.qx = q_avg.getX();
-    average_pose.qy = q_avg.getY();
-    average_pose.qz = q_avg.getZ();
-
-    return average_pose;
-}
-
-bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined_tag, 
-                                                       const quot_tag_info_t& tag1, 
-                                                       const quot_tag_info_t& tag2, 
-                                                       const tag_offset_t& offset, 
-                                                       double threshold_percentage) {
-    // --- デバッグ用：入力タグの初期 Pose 表示 ---
-    // （デバッグ用に各タグのクォータニオンからRPYを取得して表示）
-    tf2::Quaternion q1(tag1.pose.qx, tag1.pose.qy, tag1.pose.qz, tag1.pose.qw);
-    double tag1_roll, tag1_pitch, tag1_yaw;
-    tf2::Matrix3x3(q1).getRPY(tag1_roll, tag1_pitch, tag1_yaw);
-
-    tf2::Quaternion q2(tag2.pose.qx, tag2.pose.qy, tag2.pose.qz, tag2.pose.qw);
-    double tag2_roll, tag2_pitch, tag2_yaw;
-    tf2::Matrix3x3(q2).getRPY(tag2_roll, tag2_pitch, tag2_yaw);
-
-    // std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x 
-    //           << ", y=" << tag1.pose.y 
-    //           << ", z=" << tag1.pose.z 
-    //           << ", roll=" << tag1_roll 
-    //           << ", pitch=" << tag1_pitch 
-    //           << ", yaw=" << tag1_yaw << std::endl;
-    // std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x 
-    //           << ", y=" << tag2.pose.y 
-    //           << ", z=" << tag2.pose.z 
-    //           << ", roll=" << tag2_roll 
-    //           << ", pitch=" << tag2_pitch 
-    //           << ", yaw=" << tag2_yaw << std::endl;
-
-    // --- 各タグの Pose から TF 変換行列を生成 ---
-    tf2::Transform transform1;
-    transform1.setOrigin(tf2::Vector3(tag1.pose.x, tag1.pose.y, tag1.pose.z));
-    transform1.setRotation(q1);
-
-    tf2::Transform transform2;
-    transform2.setOrigin(tf2::Vector3(tag2.pose.x, tag2.pose.y, tag2.pose.z));
-    transform2.setRotation(q2);
-
-    // measured_transform： tag1 から tag2 への相対変換
-    tf2::Transform measured_transform = transform1.inverse() * transform2;
-
-    // --- 期待される変化量 offset の適用 ---
-    tf2::Quaternion expected_q;
-    expected_q.setRotation(tf2::Vector3(0, 0, 1), offset.dyaw);
-    tf2::Transform expected_transform;
-    expected_transform.setOrigin(tf2::Vector3(offset.dx, offset.dy, offset.dz));
-    expected_transform.setRotation(expected_q);
-
-    // --- error_transform の算出 ---
-    // ここまではすべてクォータニオンおよび変換行列による計算で行い、RPY変換は使用していません。
-    tf2::Transform error_transform = expected_transform.inverse() * measured_transform;
-
-    // --- 誤差の算出 ---
-    // 平行移動成分のエラー（直接取得）
-    tf2::Vector3 error_translation = error_transform.getOrigin();
-    double error_x = fabs(error_translation.x());
-    double error_y = fabs(error_translation.y());
-    double error_z = fabs(error_translation.z());
-
-    // ここから回転誤差算出のために、error_transform の回転を RPY 表現に変換
-    double error_roll, error_pitch, error_yaw;
-    tf2::Matrix3x3(error_transform.getRotation()).getRPY(error_roll, error_pitch, error_yaw);
-
-    // タグサイズ（大きい方のタグサイズ）で正規化し、パーセンテージとして計算
-    double reference_size = std::max(tag1.size, tag2.size);
-    double x_error_percentage = (error_x / reference_size) * 100.0;
-    double y_error_percentage = (error_y / reference_size) * 100.0;
-    double z_error_percentage = (error_z / reference_size) * 100.0;
-    // 回転誤差は π (約3.14) を基準（角度はラジアン）
-    double roll_error_percentage = (fabs(error_roll) / 3.14) * 100.0;
-    double pitch_error_percentage = (fabs(error_pitch) / 3.14) * 100.0;
-    double yaw_error_percentage = (fabs(error_yaw) / 3.14) * 100.0;
-
-    std::cout << "Error Translation: X=" << error_x 
-              << ", Y=" << error_y 
-              << ", Z=" << error_z << std::endl;
-    std::cout << "Error Rotation: Roll=" << error_roll 
-              << ", Pitch=" << error_pitch 
-              << ", Yaw=" << error_yaw << std::endl;
-    std::cout << "Error Percentages: X=" << x_error_percentage 
-              << "%, Y=" << y_error_percentage 
-              << "%, Z=" << z_error_percentage << "%" << std::endl;
-    std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage 
-              << "%, Pitch=" << pitch_error_percentage 
-              << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
-
-    // --- 統合条件の評価 ---
-    if (x_error_percentage <= threshold_percentage &&
-        y_error_percentage <= threshold_percentage &&
-        z_error_percentage <= threshold_percentage &&
-        roll_error_percentage <= threshold_percentage &&
-        pitch_error_percentage <= threshold_percentage &&
-        yaw_error_percentage <= threshold_percentage) {
-        combined_tag.id = tag1.id + tag2.id;
-        combined_tag.size = (tag1.size + tag2.size) * 2; // 合成できたので、単純な足し算よりもタグの評価を上げる
-        // calculateAveragePose は QuatPose3D の平均を算出する処理に修正済み
-        combined_tag.pose = calculateAveragePose(tag1.pose, tag2.pose);
-        combined_tag.marker_flag = 1; // 統合成功
-        return true;
-    }
-
-    combined_tag.marker_flag = 0; // 統合失敗
-    return false;
 }
 
 QuatPose3D MultiMarkerPoseEstimator::convertToQuat3DPose(const apriltag_pose_t& pose) {

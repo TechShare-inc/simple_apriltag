@@ -114,8 +114,6 @@ private:
     std::vector<quot_tag_info_t> collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
     quot_tag_info_t moveHalfTagInfo(const quot_tag_info_t& tag, const tag_offset_t& offset, const bool inverse = false);
     quot_tag_info_t processNode(const tag_node_t& node, std::vector<quot_tag_info_t>& tag_info_list);
-    bool validateAndEstimatePair(quot_tag_info_t& combined_tag, const quot_tag_info_t& tag1, const quot_tag_info_t& tag2, const tag_offset_t& offset, double threshold);
-    QuatPose3D calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2);
     QuatPose3D convertToQuat3DPose(const apriltag_pose_t& pose);
 };
 
