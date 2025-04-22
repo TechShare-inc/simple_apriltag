@@ -68,37 +68,34 @@ class TestTFPublisher(Node):
         # tag1_robot_tf.transform.rotation.w = 0.5
         # transforms.append(tag1_robot_tf)
 
-        # Tag1 の TF (world -> tag1)
+        # 1) Input TF (world -> tag1)
         tag1_tf = TransformStamped()
         tag1_tf.header.stamp = self.get_clock().now().to_msg()
         tag1_tf.header.frame_id = "world"
         tag1_tf.child_frame_id = "tag1"
-        tag1_tf.transform.translation.x = 0.283497
-        tag1_tf.transform.translation.y = -0.052209
-        tag1_tf.transform.translation.z = 0.0938793
-        # Euler角 (roll, pitch, yaw)
-        q1 = tft.quaternion_from_euler(-3.08975, 0.189767, 0.357579)
-        tag1_tf.transform.rotation.x = q1[0]
-        tag1_tf.transform.rotation.y = q1[1]
-        tag1_tf.transform.rotation.z = q1[2]
-        tag1_tf.transform.rotation.w = q1[3]
+        tag1_tf.transform.translation.x = 0.268536
+        tag1_tf.transform.translation.y = 0.0152908
+        tag1_tf.transform.translation.z = -0.0145795
+        tag1_tf.transform.rotation.w = 0.953901
+        tag1_tf.transform.rotation.x = -0.0419764
+        tag1_tf.transform.rotation.y = 0.114172
+        tag1_tf.transform.rotation.z = 0.274365
         transforms.append(tag1_tf)
 
-        # Tag2 の TF (world -> tag2)
+        # 2) Moved TF (world -> tag2)
         tag2_tf = TransformStamped()
         tag2_tf.header.stamp = self.get_clock().now().to_msg()
         tag2_tf.header.frame_id = "world"
         tag2_tf.child_frame_id = "tag2"
-        tag2_tf.transform.translation.x = 0.292741
-        tag2_tf.transform.translation.y = 0.00310665
-        tag2_tf.transform.translation.z = 0.0966114
-        # Euler角 (roll, pitch, yaw)
-        q2 = tft.quaternion_from_euler(3.07493, 0.131582, -0.472841)
-        tag2_tf.transform.rotation.x = q2[0]
-        tag2_tf.transform.rotation.y = q2[1]
-        tag2_tf.transform.rotation.z = q2[2]
-        tag2_tf.transform.rotation.w = q2[3]
+        tag2_tf.transform.translation.x = 0.248683
+        tag2_tf.transform.translation.y = 0.0261043
+        tag2_tf.transform.translation.z = -0.0121851
+        tag2_tf.transform.rotation.w = 0.992408
+        tag2_tf.transform.rotation.x = -0.0700951
+        tag2_tf.transform.rotation.y = 0.0994175
+        tag2_tf.transform.rotation.z = 0.0181364
         transforms.append(tag2_tf)
+
 
         # Tag3 の TF (world -> tag3)
         tag3_tf = TransformStamped()

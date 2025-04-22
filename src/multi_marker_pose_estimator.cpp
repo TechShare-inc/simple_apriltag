@@ -186,37 +186,67 @@ std::vector<quot_tag_info_t> MultiMarkerPoseEstimator::collectTagsAndDetect(cv::
     return tag_info_list;
 }
 
-// シンプルな3D変換の適用：roll, pitchはそのままで、x,y座標は現在のyawに基づく平行移動、zとyawは単純加算
-quot_tag_info_t MultiMarkerPoseEstimator::moveTagInfo(const quot_tag_info_t& tag, const tag_offset_t& offset) {
+quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
+    const quot_tag_info_t& tag,
+    const tag_offset_t& offset,
+    bool inverse
+) {
+    // --- デバッグ出力：関数入力 ---
+    std::cout << "[MoveHalfTagInfo] Input Tag ID=" << tag.id
+              << "  Pos=(x=" << tag.pose.x << ", y=" << tag.pose.y << ", z=" << tag.pose.z << ")"
+              << "  OrientQuat=(w=" << tag.pose.qw << ", x=" << tag.pose.qx 
+                                 << ", y=" << tag.pose.qy << ", z=" << tag.pose.qz << ")"
+              << "  Offset=(dx=" << offset.dx << ", dy=" << offset.dy 
+                             << ", dz=" << offset.dz << ", dyaw=" << offset.dyaw << ")"
+              << "  Inverse=" << (inverse?"true":"false")
+              << std::endl;
+
+
+    // 元の Transform を一行で作成
+    tf2::Transform original_tf{
+      tf2::Quaternion{tag.pose.qx, tag.pose.qy, tag.pose.qz, tag.pose.qw},
+      tf2::Vector3{tag.pose.x, tag.pose.y, tag.pose.z}
+    };
+
+    // オフセットを作る小さなラムダ（軸–角度回転＋並進をまとめる）
+    auto makeOffset = [&](double factor){
+      tf2::Quaternion q;
+      q.setRotation(tf2::Vector3{0,0,1}, offset.dyaw * factor);
+      return tf2::Transform{q, tf2::Vector3{
+        offset.dx * factor,
+        offset.dy * factor,
+        offset.dz * factor
+      }};
+    };
+
+    // 半分オフセットだけは常に使う
+    tf2::Transform offHalf = makeOffset(0.5);
+
+    // inverse フラグで式を切り替え
+    tf2::Transform result_tf = original_tf
+      * ( inverse
+          ? makeOffset(1.0).inverse() * offHalf
+          : offHalf
+        );
+
+    // --- 結果抽出（省略） ---
+    tf2::Vector3 t = result_tf.getOrigin();
+    tf2::Quaternion q_new = result_tf.getRotation();
     quot_tag_info_t moved_tag = tag;
+    moved_tag.pose.x  = t.x();
+    moved_tag.pose.y  = t.y();
+    moved_tag.pose.z  = t.z();
+    moved_tag.pose.qw = q_new.getW();
+    moved_tag.pose.qx = q_new.getX();
+    moved_tag.pose.qy = q_new.getY();
+    moved_tag.pose.qz = q_new.getZ();
 
-    // 現在のクォータニオンから RPY を取得
-    tf2::Quaternion q(tag.pose.qx, tag.pose.qy, tag.pose.qz, tag.pose.qw);
-    double roll, pitch, yaw;
-    tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-
-    // 現在の yaw に基づいて x, y 座標の平行移動を計算
-    double cos_yaw = cos(pitch);
-    double sin_yaw = sin(pitch);
-    double new_x = tag.pose.x + offset.dx * cos_yaw - offset.dy * sin_yaw;
-    double new_y = tag.pose.y + offset.dx * sin_yaw + offset.dy * cos_yaw;
-    double new_z = tag.pose.z + offset.dz;
-
-    // yaw のみ単純加算（roll, pitch はそのまま）
-    double new_pitch = pitch - offset.dyaw;
-
-    // 更新後の RPY から新しいクォータニオンを生成
-    tf2::Quaternion new_q;
-    new_q.setRPY(roll, new_pitch, yaw);
-
-    // 新たな平行移動後の位置と回転（クォータニオン）を格納
-    moved_tag.pose.x = new_x;
-    moved_tag.pose.y = new_y;
-    moved_tag.pose.z = new_z;
-    moved_tag.pose.qw = new_q.getW();
-    moved_tag.pose.qx = new_q.getX();
-    moved_tag.pose.qy = new_q.getY();
-    moved_tag.pose.qz = new_q.getZ();
+    // --- デバッグ出力：関数出力 ---
+    std::cout << "[MoveHalfTagInfo] Moved  Tag ID=" << moved_tag.id
+              << "  Pos=(x=" << moved_tag.pose.x << ", y=" << moved_tag.pose.y << ", z=" << moved_tag.pose.z << ")"
+              << "  OrientQuat=(w=" << moved_tag.pose.qw << ", x=" << moved_tag.pose.qx 
+                                 << ", y=" << moved_tag.pose.qy << ", z=" << moved_tag.pose.qz << ")"
+              << std::endl;
 
     return moved_tag;
 }
@@ -237,29 +267,17 @@ quot_tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, st
                 combined_tag = (left_tag.size >= right_tag.size) ? left_tag : right_tag;
                 // オフセットの半分を適用して調整
                 if (combined_tag.id == left_tag.id) {
-                    tag_offset_t halfOffset = scaleOffset(*node.tag_offset, 0.5);
-                    combined_tag = moveTagInfo(left_tag, halfOffset);
+                    combined_tag = moveHalfTagInfo(left_tag, *node.tag_offset);
                 } else {
-                    tag_offset_t halfOffset = scaleOffset(*node.tag_offset, 0.5);
-                    // 反対方向の場合、符号を反転
-                    halfOffset.dx = -halfOffset.dx;
-                    halfOffset.dy = -halfOffset.dy;
-                    halfOffset.dz = -halfOffset.dz;
-                    halfOffset.dyaw = -halfOffset.dyaw;
-                    combined_tag = moveTagInfo(right_tag, halfOffset);
+                    combined_tag = moveHalfTagInfo(right_tag, *node.tag_offset, true);
                 }
                 combined_tag.marker_flag = 1;
             }
         } else if (left_tag.marker_flag == 1) {
-            combined_tag = moveTagInfo(left_tag, *node.tag_offset);
+            combined_tag = moveHalfTagInfo(left_tag, *node.tag_offset);
             combined_tag.marker_flag = 1;
         } else if (right_tag.marker_flag == 1) {
-            tag_offset_t negOffset = *node.tag_offset;
-            negOffset.dx = -negOffset.dx;
-            negOffset.dy = -negOffset.dy;
-            negOffset.dz = -negOffset.dz;
-            negOffset.dyaw = -negOffset.dyaw;
-            combined_tag = moveTagInfo(right_tag, negOffset);
+            combined_tag = moveHalfTagInfo(right_tag, *node.tag_offset, true);
             combined_tag.marker_flag = 1;
         }
     } else if (!node.left_child && !node.right_child) {
@@ -383,18 +401,18 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
     double tag2_roll, tag2_pitch, tag2_yaw;
     tf2::Matrix3x3(q2).getRPY(tag2_roll, tag2_pitch, tag2_yaw);
 
-    std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x 
-              << ", y=" << tag1.pose.y 
-              << ", z=" << tag1.pose.z 
-              << ", roll=" << tag1_roll 
-              << ", pitch=" << tag1_pitch 
-              << ", yaw=" << tag1_yaw << std::endl;
-    std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x 
-              << ", y=" << tag2.pose.y 
-              << ", z=" << tag2.pose.z 
-              << ", roll=" << tag2_roll 
-              << ", pitch=" << tag2_pitch 
-              << ", yaw=" << tag2_yaw << std::endl;
+    // std::cout << "Initial Tag1 Pose: x=" << tag1.pose.x 
+    //           << ", y=" << tag1.pose.y 
+    //           << ", z=" << tag1.pose.z 
+    //           << ", roll=" << tag1_roll 
+    //           << ", pitch=" << tag1_pitch 
+    //           << ", yaw=" << tag1_yaw << std::endl;
+    // std::cout << "Initial Tag2 Pose: x=" << tag2.pose.x 
+    //           << ", y=" << tag2.pose.y 
+    //           << ", z=" << tag2.pose.z 
+    //           << ", roll=" << tag2_roll 
+    //           << ", pitch=" << tag2_pitch 
+    //           << ", yaw=" << tag2_yaw << std::endl;
 
     // --- 各タグの Pose から TF 変換行列を生成 ---
     tf2::Transform transform1;
@@ -409,8 +427,6 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
     tf2::Transform measured_transform = transform1.inverse() * transform2;
 
     // --- 期待される変化量 offset の適用 ---
-    // 回転成分 offset.dyaw はタグ座標系での y 軸回りの回転として扱う
-    // ここでは setRotation を用いて、軸‐角（axis: (0,1,0)）からクォータニオンを直接生成する
     tf2::Quaternion expected_q;
     expected_q.setRotation(tf2::Vector3(0, 0, 1), offset.dyaw);
     tf2::Transform expected_transform;
@@ -442,18 +458,18 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
     double pitch_error_percentage = (fabs(error_pitch) / 3.14) * 100.0;
     double yaw_error_percentage = (fabs(error_yaw) / 3.14) * 100.0;
 
-    std::cout << "Error Translation: X=" << error_x 
-              << ", Y=" << error_y 
-              << ", Z=" << error_z << std::endl;
-    std::cout << "Error Rotation: Roll=" << error_roll 
-              << ", Pitch=" << error_pitch 
-              << ", Yaw=" << error_yaw << std::endl;
-    std::cout << "Error Percentages: X=" << x_error_percentage 
-              << "%, Y=" << y_error_percentage 
-              << "%, Z=" << z_error_percentage << "%" << std::endl;
-    std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage 
-              << "%, Pitch=" << pitch_error_percentage 
-              << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
+    // std::cout << "Error Translation: X=" << error_x 
+    //           << ", Y=" << error_y 
+    //           << ", Z=" << error_z << std::endl;
+    // std::cout << "Error Rotation: Roll=" << error_roll 
+    //           << ", Pitch=" << error_pitch 
+    //           << ", Yaw=" << error_yaw << std::endl;
+    // std::cout << "Error Percentages: X=" << x_error_percentage 
+    //           << "%, Y=" << y_error_percentage 
+    //           << "%, Z=" << z_error_percentage << "%" << std::endl;
+    // std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage 
+    //           << "%, Pitch=" << pitch_error_percentage 
+    //           << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
 
     // --- 統合条件の評価 ---
     if (x_error_percentage <= threshold_percentage &&

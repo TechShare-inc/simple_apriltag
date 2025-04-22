@@ -48,19 +48,19 @@ class MultiMarkerPoseEstimator {
 public:
     MultiMarkerPoseEstimator() = default;
 
-    /*** @brief TripletTagノード構造を作成します。
+    /*** @brief Triplet3DTagノード構造を作成します。
      * 
      * 構造は以下の通りです:
      *       +---------+
-     *       |   Root  |
+     *       |  Parent |
      *       +---------+
      *       |  L | R  |
      *       +---------+
-     * Rootは親タグ、Lは左子タグ、Rは右子タグを示します。
-     * 子タグ (L, R) は親タグ (Root) の半分の大きさで、30°傾いています。
+     * Parentは親タグ、Lは左子タグ、Rは右子タグを示します。
+     * 子タグ (L, R) は親タグ (Parent) の半分の大きさで、30°傾いています。
      * 
-     * @param root_id 親タグのID
-     * @param root_size 親タグのサイズ
+     * @param parent_tag_id 親タグのID
+     * @param parent_tag_size 親タグのサイズ
      * @param left_id 左子タグのID
      * @param right_id 右子タグのID
      * @return TripletTagを表すtag_node_t構造体
@@ -71,15 +71,15 @@ public:
      * 
      * 構造は以下の通りです:
      *       +---------+
-     *       |   Root  |
+     *       |  Parent |
      *       +---------+
      *       |  L | R  |
      *       +---------+
-     * Rootは親タグ、Lは左子タグ、Rは右子タグを示します。
-     * 子タグ (L, R) は親タグ (Root) の半分の大きさです。
+     * Parentは親タグ、Lは左子タグ、Rは右子タグを示します。
+     * 子タグ (L, R) は親タグ (Parent) の半分の大きさです。
      * 
-     * @param root_id 親タグのID
-     * @param root_size 親タグのサイズ
+     * @param parent_tag_id 親タグのID
+     * @param parent_tag_size 親タグのサイズ
      * @param left_id 左子タグのID
      * @param right_id 右子タグのID
      * @return TripletTagを表すtag_node_t構造体
@@ -97,8 +97,8 @@ public:
     * Rootは親タグ、Lは左子タグ、Rは右子タグ、LLは左外側タグ、RRは右外側タグを示します。
     * 子タグ (LL, L, R, RR) はすべて親タグ (Root) の半分の大きさです。
     * 
-    * @param root_id 親タグのID
-    * @param root_size 親タグのサイズ
+    * @param parent_tag_id 親タグのID
+    * @param parent_tag_size 親タグのサイズ
     * @param left_id 左子タグのID
     * @param right_id 右子タグのID
     * @param ll_id 左外側タグのID
@@ -112,7 +112,7 @@ public:
 
 private:
     std::vector<quot_tag_info_t> collectTagsAndDetect(cv::Mat& frame, cv::Mat& output_frame, const tag_node_t& root);
-    quot_tag_info_t moveTagInfo(const quot_tag_info_t& tag, const tag_offset_t& offset);
+    quot_tag_info_t moveHalfTagInfo(const quot_tag_info_t& tag, const tag_offset_t& offset, const bool inverse = false);
     quot_tag_info_t processNode(const tag_node_t& node, std::vector<quot_tag_info_t>& tag_info_list);
     bool validateAndEstimatePair(quot_tag_info_t& combined_tag, const quot_tag_info_t& tag1, const quot_tag_info_t& tag2, const tag_offset_t& offset, double threshold);
     QuatPose3D calculateAveragePose(const QuatPose3D& pose1, const QuatPose3D& pose2);
