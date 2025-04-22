@@ -10,18 +10,20 @@ static tag_offset_t scaleOffset(const tag_offset_t& offset, double factor) {
 }
 
 tag_node_t MultiMarkerPoseEstimator::createTriplet3DTagNode(uint16_t parent_tag_id, double parent_tag_size, uint16_t left_id, uint16_t right_id) {
+    double tag_thickness = 0.005;                                  // タグの厚み
     double child_size = parent_tag_size / 2;                       // 子タグは親タグの半分
     double half_child_x = child_size / 4;                          // 子タグのベッパリ高さの半分
+    double offset_parent_x = half_child_x + tag_thickness * 1.732 /2;                       // 親タグからみた、子タグ中心(x)
     double child_with_border_size = child_size * 10 / 8;           // 子タグ（白い部分込み）の大きさ
-    double offset_child_x = child_with_border_size * 1.732 / 4;    // 左の子タグの中心からみた、右の子タグの中心(x)
-    double offset_child_y = child_with_border_size * 3 / 4;        // 左の子タグの中心からみた、右の子タグの中心(y)
+    double offset_child_x = child_with_border_size * 1.732 / 4 + tag_thickness / 2;         // 左の子タグの中心からみた、右の子タグの中心(x)
+    double offset_child_y = child_with_border_size * 3 / 4 + tag_thickness * 1.732 /2;      // 左の子タグの中心からみた、右の子タグの中心(y)
     double half_full_tag_height = child_with_border_size * 1.5;    // 全体タグの白い部分込みの高さの半分
     double child_arg = 3.1415 * 60 / 180;                          // 子タグ同士のなす角
 
     return tag_node_t{
         std::nullopt,
         // 上の親タグの中心からみた、下２つの子タグの中心の相対位置
-        tag_offset_t{-half_child_x, 0.0, -half_full_tag_height, 0.0},
+        tag_offset_t{-offset_parent_x, 0.0, -half_full_tag_height, 0.0},
         std::make_unique<tag_node_t>(tag_node_t{
             quot_tag_info_t{parent_tag_id, 1, parent_tag_size, {}},
             std::nullopt,
@@ -191,16 +193,15 @@ quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
     const tag_offset_t& offset,
     bool inverse
 ) {
-    // --- デバッグ出力：関数入力 ---
-    std::cout << "[MoveHalfTagInfo] Input Tag ID=" << tag.id
-              << "  Pos=(x=" << tag.pose.x << ", y=" << tag.pose.y << ", z=" << tag.pose.z << ")"
-              << "  OrientQuat=(w=" << tag.pose.qw << ", x=" << tag.pose.qx 
-                                 << ", y=" << tag.pose.qy << ", z=" << tag.pose.qz << ")"
-              << "  Offset=(dx=" << offset.dx << ", dy=" << offset.dy 
-                             << ", dz=" << offset.dz << ", dyaw=" << offset.dyaw << ")"
-              << "  Inverse=" << (inverse?"true":"false")
-              << std::endl;
-
+    // // --- デバッグ出力：関数入力 ---
+    // std::cout << "[MoveHalfTagInfo] Input Tag ID=" << tag.id
+    //           << "  Pos=(x=" << tag.pose.x << ", y=" << tag.pose.y << ", z=" << tag.pose.z << ")"
+    //           << "  OrientQuat=(w=" << tag.pose.qw << ", x=" << tag.pose.qx 
+    //                              << ", y=" << tag.pose.qy << ", z=" << tag.pose.qz << ")"
+    //           << "  Offset=(dx=" << offset.dx << ", dy=" << offset.dy 
+    //                          << ", dz=" << offset.dz << ", dyaw=" << offset.dyaw << ")"
+    //           << "  Inverse=" << (inverse?"true":"false")
+    //           << std::endl;
 
     // 元の Transform を一行で作成
     tf2::Transform original_tf{
@@ -241,12 +242,12 @@ quot_tag_info_t MultiMarkerPoseEstimator::moveHalfTagInfo(
     moved_tag.pose.qy = q_new.getY();
     moved_tag.pose.qz = q_new.getZ();
 
-    // --- デバッグ出力：関数出力 ---
-    std::cout << "[MoveHalfTagInfo] Moved  Tag ID=" << moved_tag.id
-              << "  Pos=(x=" << moved_tag.pose.x << ", y=" << moved_tag.pose.y << ", z=" << moved_tag.pose.z << ")"
-              << "  OrientQuat=(w=" << moved_tag.pose.qw << ", x=" << moved_tag.pose.qx 
-                                 << ", y=" << moved_tag.pose.qy << ", z=" << moved_tag.pose.qz << ")"
-              << std::endl;
+    // // --- デバッグ出力：関数出力 ---
+    // std::cout << "[MoveHalfTagInfo] Moved  Tag ID=" << moved_tag.id
+    //           << "  Pos=(x=" << moved_tag.pose.x << ", y=" << moved_tag.pose.y << ", z=" << moved_tag.pose.z << ")"
+    //           << "  OrientQuat=(w=" << moved_tag.pose.qw << ", x=" << moved_tag.pose.qx 
+    //                              << ", y=" << moved_tag.pose.qy << ", z=" << moved_tag.pose.qz << ")"
+    //           << std::endl;
 
     return moved_tag;
 }
@@ -458,18 +459,18 @@ bool MultiMarkerPoseEstimator::validateAndEstimatePair(quot_tag_info_t& combined
     double pitch_error_percentage = (fabs(error_pitch) / 3.14) * 100.0;
     double yaw_error_percentage = (fabs(error_yaw) / 3.14) * 100.0;
 
-    // std::cout << "Error Translation: X=" << error_x 
-    //           << ", Y=" << error_y 
-    //           << ", Z=" << error_z << std::endl;
-    // std::cout << "Error Rotation: Roll=" << error_roll 
-    //           << ", Pitch=" << error_pitch 
-    //           << ", Yaw=" << error_yaw << std::endl;
-    // std::cout << "Error Percentages: X=" << x_error_percentage 
-    //           << "%, Y=" << y_error_percentage 
-    //           << "%, Z=" << z_error_percentage << "%" << std::endl;
-    // std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage 
-    //           << "%, Pitch=" << pitch_error_percentage 
-    //           << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
+    std::cout << "Error Translation: X=" << error_x 
+              << ", Y=" << error_y 
+              << ", Z=" << error_z << std::endl;
+    std::cout << "Error Rotation: Roll=" << error_roll 
+              << ", Pitch=" << error_pitch 
+              << ", Yaw=" << error_yaw << std::endl;
+    std::cout << "Error Percentages: X=" << x_error_percentage 
+              << "%, Y=" << y_error_percentage 
+              << "%, Z=" << z_error_percentage << "%" << std::endl;
+    std::cout << "Rotation Error Percentages: Roll=" << roll_error_percentage 
+              << "%, Pitch=" << pitch_error_percentage 
+              << "%, Yaw=" << yaw_error_percentage << "%" << std::endl;
 
     // --- 統合条件の評価 ---
     if (x_error_percentage <= threshold_percentage &&
