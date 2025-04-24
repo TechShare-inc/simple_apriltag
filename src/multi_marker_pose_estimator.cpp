@@ -229,17 +229,17 @@ static bool validatePairRPY(const Pose3D& p1, const Pose3D& p2,
     double pitch_pct= dpid / M_PI           * 100.0;
     double yaw_pct  = dyaw / M_PI           * 100.0;
 
-    //――― 3) ログ出力 ―――
-    std::cout << "[validatePairRPY] Translation deltas: "
-              << "dx=" << dx << ", dy=" << dy << ", dz=" << dz << std::endl;
-    std::cout << "[validatePairRPY] Translation error %: "
-              << "X=" << x_pct << "%, "
-              << "Y=" << y_pct << "%, "
-              << "Z=" << z_pct << "%" << std::endl;
-    std::cout << "[validatePairRPY] Rotation error %: "
-              << "Roll="  << roll_pct  << "%, "
-              << "Pitch=" << pitch_pct << "%, "
-              << "Yaw="   << yaw_pct   << "%" << std::endl;
+    // //――― 3) ログ出力 ―――
+    // std::cout << "[validatePairRPY] Translation deltas: "
+    //           << "dx=" << dx << ", dy=" << dy << ", dz=" << dz << std::endl;
+    // std::cout << "[validatePairRPY] Translation error %: "
+    //           << "X=" << x_pct << "%, "
+    //           << "Y=" << y_pct << "%, "
+    //           << "Z=" << z_pct << "%" << std::endl;
+    // std::cout << "[validatePairRPY] Rotation error %: "
+    //           << "Roll="  << roll_pct  << "%, "
+    //           << "Pitch=" << pitch_pct << "%, "
+    //           << "Yaw="   << yaw_pct   << "%" << std::endl;
 
     //――― 4) 判定 ―――
     return (x_pct    <= threshold_pct &&
@@ -350,7 +350,7 @@ quot_tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, st
 
             // ③ RPYベースで組み合わせ可否判定（サイズは大きい方を基準に）
             double ref_size = std::max(left_tag.size, right_tag.size);
-            if (validatePairRPY(pL, pR, /*threshold_pct=*/30.0, ref_size)) {
+            if (validatePairRPY(pL, pR, /*threshold_pct=*/50.0, ref_size)) {
                 // 成功したら平均RPYで合成
                 combined_tag.id         = left_tag.id + right_tag.id;
                 combined_tag.size       = (left_tag.size + right_tag.size) * 2;
