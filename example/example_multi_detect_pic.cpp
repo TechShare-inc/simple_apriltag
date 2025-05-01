@@ -53,10 +53,10 @@ int main(int argc, char** argv) {
     // };
 
     // タグ情報を設定
-    uint16_t root_id = 531;
-    double root_size = 0.088;
-    uint16_t left_id = 532;
-    uint16_t right_id = 533;
+    uint16_t root_id = 501;
+    double root_size = 0.084;
+    uint16_t left_id = 502;
+    uint16_t right_id = 503;
     tag_node_t root = pose_estimator.createTriplet3DTagNode(root_id, root_size, left_id, right_id);
 
     // // タグ情報を設定

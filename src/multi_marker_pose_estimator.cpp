@@ -339,6 +339,24 @@ quot_tag_info_t MultiMarkerPoseEstimator::processNode(const tag_node_t& node, st
         quot_tag_info_t left_tag = processNode(*node.left_child, tag_info_list);
         quot_tag_info_t right_tag = processNode(*node.right_child, tag_info_list);
 
+        // if (left_tag.marker_flag == 1) {
+        //     // QuatPose3D を直接取り出してログ出力
+        //     const auto& qp = left_tag.pose;
+        //     std::cout << "[processNode] Left child: "
+        //             << "x="  << qp.x  << ", y="  << qp.y  << ", z="  << qp.z
+        //             << ", qw=" << qp.qw << ", qx=" << qp.qx
+        //             << ", qy=" << qp.qy << ", qz=" << qp.qz 
+        //             << std::endl;
+        // }
+        // if (right_tag.marker_flag == 1) {
+        //     const auto& qp = right_tag.pose;
+        //     std::cout << "[processNode] Right child: "
+        //             << "x="  << qp.x  << ", y="  << qp.y  << ", z="  << qp.z
+        //             << ", qw=" << qp.qw << ", qx=" << qp.qx
+        //             << ", qy=" << qp.qy << ", qz=" << qp.qz 
+        //             << std::endl;
+        // }
+
         if (left_tag.marker_flag == 1 && right_tag.marker_flag == 1) {
             // ① 半オフセット適用
             auto left_moved  = moveHalfTagInfo(left_tag,  *node.tag_offset, /*inverse=*/false);

@@ -15,153 +15,85 @@ class TestTFPublisher(Node):
     def publish_transforms(self):
         transforms = []
 
-        # # 1) TF1: 移動量＋固定の回転（world -> tag1_moving）
-        # tag1_moving_tf = TransformStamped()
-        # tag1_moving_tf.header.stamp = self.get_clock().now().to_msg()
-        # tag1_moving_tf.header.frame_id = "world"
-        # tag1_moving_tf.child_frame_id = "tag1_moving"  # 名前は任意。元の "tag1" と分けるために変更
-        # tag1_moving_tf.transform.translation.x = 0.297148
-        # tag1_moving_tf.transform.translation.y = 0.0509337
-        # tag1_moving_tf.transform.translation.z = -0.0121608
-        # # 固定の回転(z-y-x)
-        # q_fixed = tft.quaternion_from_euler(-math.pi/2, 0.0, -math.pi/2)
-        # self.get_logger().info(f"Quaternion values - x: {q_fixed[0]}, y: {q_fixed[1]}, z: {q_fixed[2]}, w: {q_fixed[3]}")
-        # # tag1_moving_tf.transform.rotation.x = q_fixed[0]
-        # # tag1_moving_tf.transform.rotation.y = q_fixed[1]
-        # # tag1_moving_tf.transform.rotation.z = q_fixed[2]
-        # # tag1_moving_tf.transform.rotation.w = q_fixed[3]
-        # tag1_moving_tf.transform.rotation.x = -0.5
-        # tag1_moving_tf.transform.rotation.y = 0.5
-        # tag1_moving_tf.transform.rotation.z = -0.5
-        # tag1_moving_tf.transform.rotation.w = 0.5
-        # transforms.append(tag1_moving_tf)
+        # 1) 左の子ノード１
+        tf1 = TransformStamped()
+        tf1.header.stamp = self.get_clock().now().to_msg()
+        tf1.header.frame_id = "world"
+        tf1.child_frame_id  = "child_502"
+        tf1.transform.translation.x = 0.363555
+        tf1.transform.translation.y = -0.0304098
+        tf1.transform.translation.z = 0.0665764
+        tf1.transform.rotation.w = 0.878308
+        tf1.transform.rotation.x = -0.026533
+        tf1.transform.rotation.y = -0.0556838
+        tf1.transform.rotation.z = -0.4741
+        transforms.append(tf1)
 
-        # # 2) TF2: 移動なし＋既存の回転（tag1_moving -> tag1）
-        # tag1_tf = TransformStamped()
-        # tag1_tf.header.stamp = self.get_clock().now().to_msg()
-        # tag1_tf.header.frame_id = "tag1_moving"
-        # tag1_tf.child_frame_id = "tag1"  # 名前は任意（元の tag1 と区別）
-        # tag1_tf.transform.translation.x = 0.0
-        # tag1_tf.transform.translation.y = 0.0
-        # tag1_tf.transform.translation.z = 0.0
-        # # 既存の回転: Euler(0.00495003, 0.406763, -0.0432819)
-        # q_orig = tft.quaternion_from_euler(0.00495003, 0.406763, -0.0432819)
-        # tag1_tf.transform.rotation.x = q_orig[0]
-        # tag1_tf.transform.rotation.y = q_orig[1]
-        # tag1_tf.transform.rotation.z = q_orig[2]
-        # tag1_tf.transform.rotation.w = q_orig[3]
-        # transforms.append(tag1_tf)
+        # 2) 右の子ノード１
+        tf2 = TransformStamped()
+        tf2.header.stamp = self.get_clock().now().to_msg()
+        tf2.header.frame_id = "world"
+        tf2.child_frame_id  = "child_503"
+        tf2.transform.translation.x = 0.345759
+        tf2.transform.translation.y = -0.0760018
+        tf2.transform.translation.z = 0.0695614
+        tf2.transform.rotation.w = 0.997934
+        tf2.transform.rotation.x = -0.0435647
+        tf2.transform.rotation.y = 0.0137398
+        tf2.transform.rotation.z = 0.0451731
+        transforms.append(tf2)
 
-        # # 3) TF2: 移動なし＋固定の回転（tag1 -> tag1_robot）
-        # tag1_robot_tf = TransformStamped()
-        # tag1_robot_tf.header.stamp = self.get_clock().now().to_msg()
-        # tag1_robot_tf.header.frame_id = "tag1"
-        # tag1_robot_tf.child_frame_id = "tag1_robot"  # 名前は任意（元の tag1 と区別）
-        # tag1_robot_tf.transform.translation.x = 0.0
-        # tag1_robot_tf.transform.translation.y = 0.0
-        # tag1_robot_tf.transform.translation.z = 0.0
-        # q_fixed = tft.quaternion_from_euler(0.0, -math.pi/2, math.pi/2)
-        # self.get_logger().info(f"Quaternion values - x: {q_fixed[0]}, y: {q_fixed[1]}, z: {q_fixed[2]}, w: {q_fixed[3]}")
-        # tag1_robot_tf.transform.rotation.x = 0.5
-        # tag1_robot_tf.transform.rotation.y = -0.5
-        # tag1_robot_tf.transform.rotation.z = 0.5
-        # tag1_robot_tf.transform.rotation.w = 0.5
-        # transforms.append(tag1_robot_tf)
+        # 3) 左の子ノード２
+        tf3 = TransformStamped()
+        tf3.header.stamp = self.get_clock().now().to_msg()
+        tf3.header.frame_id = "world"
+        tf3.child_frame_id  = "child_501"
+        tf3.transform.translation.x = 0.392542
+        tf3.transform.translation.y = -0.05965
+        tf3.transform.translation.z = 0.15616
+        tf3.transform.rotation.w = 0.986253
+        tf3.transform.rotation.x = -0.044739
+        tf3.transform.rotation.y = -0.0562873
+        tf3.transform.rotation.z = -0.148782
+        transforms.append(tf3)
 
-        # 1) Input TF (world -> tag1)
-        tag1_tf = TransformStamped()
-        tag1_tf.header.stamp = self.get_clock().now().to_msg()
-        tag1_tf.header.frame_id = "world"
-        tag1_tf.child_frame_id = "tag1"
-        tag1_tf.transform.translation.x = 0.268536
-        tag1_tf.transform.translation.y = 0.0152908
-        tag1_tf.transform.translation.z = -0.0145795
-        tag1_tf.transform.rotation.w = 0.953901
-        tag1_tf.transform.rotation.x = -0.0419764
-        tag1_tf.transform.rotation.y = 0.114172
-        tag1_tf.transform.rotation.z = 0.274365
-        transforms.append(tag1_tf)
+        # 4) 右の子ノード２
+        tf4 = TransformStamped()
+        tf4.header.stamp = self.get_clock().now().to_msg()
+        tf4.header.frame_id = "world"
+        tf4.child_frame_id  = "combined_502_503"
+        tf4.transform.translation.x = 0.35424
+        tf4.transform.translation.y = -0.0530383
+        tf4.transform.translation.z = 0.0676427
+        tf4.transform.rotation.w = 0.973647
+        tf4.transform.rotation.x = -0.0426543
+        tf4.transform.rotation.y = -0.0224405
+        tf4.transform.rotation.z = -0.222909
+        transforms.append(tf4)
 
-        # 2) Moved TF (world -> tag2)
-        tag2_tf = TransformStamped()
-        tag2_tf.header.stamp = self.get_clock().now().to_msg()
-        tag2_tf.header.frame_id = "world"
-        tag2_tf.child_frame_id = "tag2"
-        tag2_tf.transform.translation.x = 0.248683
-        tag2_tf.transform.translation.y = 0.0261043
-        tag2_tf.transform.translation.z = -0.0121851
-        tag2_tf.transform.rotation.w = 0.992408
-        tag2_tf.transform.rotation.x = -0.0700951
-        tag2_tf.transform.rotation.y = 0.0994175
-        tag2_tf.transform.rotation.z = 0.0181364
-        transforms.append(tag2_tf)
+        # 5) 最後の推定タグ位置 (world -> tag_estimated)
+        estimated_tf = TransformStamped()
+        estimated_tf.header.stamp = self.get_clock().now().to_msg()
+        estimated_tf.header.frame_id    = "world"
+        estimated_tf.child_frame_id     = "tag_estimated"
+        estimated_tf.transform.translation.x = 0.374645
+        estimated_tf.transform.translation.y = -0.0571119
+        estimated_tf.transform.translation.z = 0.111785
+        # RPY → クォータニオン
+        q_est = tft.quaternion_from_euler(
+            -0.0726931,  # roll
+            -0.093709,   # pitch
+            -0.371389    # yaw
+        )
+        estimated_tf.transform.rotation.x = q_est[0]
+        estimated_tf.transform.rotation.y = q_est[1]
+        estimated_tf.transform.rotation.z = q_est[2]
+        estimated_tf.transform.rotation.w = q_est[3]
+        transforms.append(estimated_tf)
 
-
-        # Tag3 の TF (world -> tag3)
-        tag3_tf = TransformStamped()
-        tag3_tf.header.stamp = self.get_clock().now().to_msg()
-        tag3_tf.header.frame_id = "world"
-        tag3_tf.child_frame_id = "tag3"
-        tag3_tf.transform.translation.x = 0.282316
-        tag3_tf.transform.translation.y = -0.0294107
-        tag3_tf.transform.translation.z = 0.00700863
-        # Euler角 (roll, pitch, yaw)
-        q3 = tft.quaternion_from_euler(3.097, 0.109891, -0.0323851)
-        tag3_tf.transform.rotation.x = q3[0]
-        tag3_tf.transform.rotation.y = q3[1]
-        tag3_tf.transform.rotation.z = q3[2]
-        tag3_tf.transform.rotation.w = q3[3]
-        transforms.append(tag3_tf)
-
-        # Tag4 の TF (world -> tag4)
-        tag4_tf = TransformStamped()
-        tag4_tf.header.stamp = self.get_clock().now().to_msg()
-        tag4_tf.header.frame_id = "world"
-        tag4_tf.child_frame_id = "tag4"
-        tag4_tf.transform.translation.x = 0.288119
-        tag4_tf.transform.translation.y = -0.0245512
-        tag4_tf.transform.translation.z = 0.0952454
-        # Euler角 (roll, pitch, yaw)
-        q4 = tft.quaternion_from_euler(3.13418, 0.160675, -0.0576312)
-        tag4_tf.transform.rotation.x = q4[0]
-        tag4_tf.transform.rotation.y = q4[1]
-        tag4_tf.transform.rotation.z = q4[2]
-        tag4_tf.transform.rotation.w = q4[3]
-
-        # Tag5 の TF (world -> tag5)
-        tag5_tf = TransformStamped()
-        tag5_tf.header.stamp = self.get_clock().now().to_msg()
-        tag5_tf.header.frame_id = "world"
-        tag5_tf.child_frame_id = "tag5"
-        tag5_tf.transform.translation.x = 0.285218
-        tag5_tf.transform.translation.y = -0.0269809
-        tag5_tf.transform.translation.z = 0.051127
-        # Euler角 (roll, pitch, yaw)
-        q5 = tft.quaternion_from_euler(3.11559, 0.135283, -0.0450081)
-        tag5_tf.transform.rotation.x = q5[0]
-        tag5_tf.transform.rotation.y = q5[1]
-        tag5_tf.transform.rotation.z = q5[2]
-        tag5_tf.transform.rotation.w = q5[3]
-        transforms.append(tag5_tf)
-
-        # expected TF (tag1 -> expected) はそのまま
-        expected_tf = TransformStamped()
-        expected_tf.header.stamp = self.get_clock().now().to_msg()
-        expected_tf.header.frame_id = "tag1"  # 注意: expected は tag1 を親フレームにしています
-        expected_tf.child_frame_id = "expected"
-        expected_tf.transform.translation.x = 0.0
-        expected_tf.transform.translation.y = 0.0
-        expected_tf.transform.translation.z = 0.0
-        q_expected = tft.quaternion_from_euler(0.0, 0.0, math.pi/3)
-        expected_tf.transform.rotation.x = q_expected[0]
-        expected_tf.transform.rotation.y = q_expected[1]
-        expected_tf.transform.rotation.z = q_expected[2]
-        expected_tf.transform.rotation.w = q_expected[3]
-        transforms.append(expected_tf)
-
-        # すべてのTFを同時にパブリッシュ
+        # すべてのTFを一斉配信
         self._static_broadcaster.sendTransform(transforms)
-        self.get_logger().info("Published static transforms for tag1_moving, tag1_static, tag2, and expected transform.")
+        self.get_logger().info("Published 4 initial child transforms.")
 
 def main(args=None):
     rclpy.init(args=args)

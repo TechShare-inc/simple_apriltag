@@ -23,3 +23,18 @@ cmake ..
 make
 ./example_detect_gst
 ```
+
+# 3D tag
+
+複数のTagを１つのTagとして検出することができる。
+片方のTagからみた、もう片方の位置を最初に与えることで機能する。
+
+![Triplet3D 検出例](img/detect_triplet3D.png)
+
+Rvizで表示されているものは、
+ - Apriltag id: 501
+ - Apriltag id: 502
+ - Apriltag id: 503
+ - 502と503を合成したもの
+ - 501と、502,503合成Tagを合成した、最終推定ポーズ
+である。
